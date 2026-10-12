@@ -4,17 +4,9 @@ import com.google.gson.JsonArray;
 import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
-import land.webgui.WebGUIMod;
 import land.webgui.WebGUIVersion;
-import net.minecraft.ChatFormatting;
-import net.minecraft.network.chat.Component;
-import net.minecraft.server.level.ServerPlayer;
-//? if fabric {
-import net.fabricmc.loader.api.SemanticVersion;
-import net.fabricmc.loader.api.VersionParsingException;
-//? } else {
-/*import org.apache.maven.artifact.versioning.DefaultArtifactVersion;*/
-//? }
+import land.webgui.common.VersionCompare;
+import land.webgui.common.WebGUILog;
 
 import java.net.URI;
 import java.net.URLEncoder;
@@ -39,12 +31,6 @@ public final class WebGUIUpdateChecker {
     private static final String MODRINTH_PROJECT = "tDw1xQja";
     private static final String GITHUB_REPO = "mc-webgui/webgui";
 
-    //? if fabric {
-    private static final String LOADER = "fabric";
-    //? } else {
-    /*private static final String LOADER = "neoforge";
-    *///? }
-
     /** What was found, or null while nothing newer is known. Read from the join thread. */
     private static volatile Update available;
 
@@ -53,16 +39,28 @@ public final class WebGUIUpdateChecker {
     /** A version newer than the one running. */
     public record Update(String version, String url, String channel) {}
 
-    public static void checkAsync() {
+    /**
+     * Looks for a newer version on a background thread.
+     *
+     * Compares against {@link WebGUIVersion#current()}, so the platform must have called
+     * {@link WebGUIVersion#init} first; with no version known there is nothing to compare.
+     *
+     * @param loader the Modrinth loader this build is for ({@code "fabric"}, {@code "neoforge"}),
+     *               or null where Modrinth publishes nothing for the platform, which leaves GitHub
+     */
+    public static void checkAsync(String loader) {
+        if (!WebGUIVersion.isKnown()) {
+            return;
+        }
         String full = WebGUIVersion.current();
         String current = stripBuildMeta(full);
-        if (current.isEmpty() || "unknown".equals(current)) {
+        if (current.isEmpty()) {
             return;
         }
         String game = gameVersion(full);
 
         Thread t = new Thread(() -> {
-            Update found = fromModrinth(current, game);
+            Update found = loader == null ? null : fromModrinth(current, loader, game);
             if (found == null) {
                 found = fromGitHub(current);
             }
@@ -70,49 +68,48 @@ public final class WebGUIUpdateChecker {
                 return;
             }
             available = found;
-            WebGUIMod.LOGGER.info("+------------------------------------------------");
-            WebGUIMod.LOGGER.info("| WebGUI update available: {} -> {}{}",
+            WebGUILog.LOGGER.info("+------------------------------------------------");
+            WebGUILog.LOGGER.info("| WebGUI update available: {} -> {}{}",
                     current, found.version(), channelSuffix(found));
             if (!found.url().isEmpty()) {
-                WebGUIMod.LOGGER.info("| Download: {}", found.url());
+                WebGUILog.LOGGER.info("| Download: {}", found.url());
             }
-            WebGUIMod.LOGGER.info("+------------------------------------------------");
+            WebGUILog.LOGGER.info("+------------------------------------------------");
         }, "webgui-update-check");
         t.setDaemon(true);
         t.start();
     }
 
-    /** Says it to an operator who just joined, if the server was told to. */
-    public static void notifyOnJoin(ServerPlayer player) {
+    /** What the check found, or null while nothing newer is known. */
+    public static Update available() {
+        return available;
+    }
+
+    /**
+     * The chat lines an operator who just joined gets, or none.
+     *
+     * Empty while nothing newer is known, or when the server was told not to say it in chat.
+     * Whether the player is an operator is the platform's to decide.
+     */
+    public static java.util.List<String> joinNotice() {
         Update found = available;
-        if (found == null || player == null || !WebviewServerConfig.updateNotifyInChat()) {
-            return;
+        if (found == null || !WebviewServerConfig.updateNotifyInChat()) {
+            return java.util.List.of();
         }
-        //? if >=1.21.5 {
-        boolean operator = net.minecraft.commands.Commands.LEVEL_GAMEMASTERS.check(player.permissions());
-        //? } else {
-        /*boolean operator = player.hasPermissions(2);
-        *///? }
-        if (!operator) {
-            return;
-        }
-        player.sendSystemMessage(Component.literal("[WebGUI] Update available: "
-                        + stripBuildMeta(WebGUIVersion.current()) + " -> " + found.version()
-                        + channelSuffix(found))
-                .withStyle(ChatFormatting.YELLOW));
-        if (!found.url().isEmpty()) {
-            player.sendSystemMessage(Component.literal("[WebGUI] " + found.url())
-                    .withStyle(ChatFormatting.GRAY));
-        }
+        String first = "[WebGUI] Update available: " + stripBuildMeta(WebGUIVersion.current())
+                + " -> " + found.version() + channelSuffix(found);
+        return found.url().isEmpty()
+                ? java.util.List.of(first)
+                : java.util.List.of(first, "[WebGUI] " + found.url());
     }
 
     // Filtered by loader and game version, so anything that comes back can be installed here.
-    private static Update fromModrinth(String current, String game) {
+    private static Update fromModrinth(String current, String loader, String game) {
         if (game.isEmpty()) {
             return null;
         }
         String url = "https://api.modrinth.com/v2/project/" + MODRINTH_PROJECT + "/version"
-                + "?loaders=" + encode("[\"" + LOADER + "\"]")
+                + "?loaders=" + encode("[\"" + loader + "\"]")
                 + "&game_versions=" + encode("[\"" + game + "\"]");
         String body = get(url);
         if (body == null) {
@@ -134,7 +131,7 @@ public final class WebGUIUpdateChecker {
             }
             return best;
         } catch (Exception malformed) {
-            WebGUIMod.LOGGER.debug("webgui: update check: Modrinth answered unexpectedly: {}",
+            WebGUILog.LOGGER.debug("webgui: update check: Modrinth answered unexpectedly: {}",
                     malformed.getMessage());
             return null;
         }
@@ -155,7 +152,7 @@ public final class WebGUIUpdateChecker {
             }
             return new Update(number, text(o, "html_url"), "release");
         } catch (Exception malformed) {
-            WebGUIMod.LOGGER.debug("webgui: update check: GitHub answered unexpectedly: {}",
+            WebGUILog.LOGGER.debug("webgui: update check: GitHub answered unexpectedly: {}",
                     malformed.getMessage());
             return null;
         }
@@ -176,27 +173,23 @@ public final class WebGUIUpdateChecker {
                     .build();
             HttpResponse<String> response = http.send(request, HttpResponse.BodyHandlers.ofString());
             if (response.statusCode() != 200) {
-                WebGUIMod.LOGGER.debug("webgui: update check: HTTP {} from {}", response.statusCode(), url);
+                WebGUILog.LOGGER.debug("webgui: update check: HTTP {} from {}", response.statusCode(), url);
                 return null;
             }
             return response.body();
         } catch (Exception unreachable) {
-            WebGUIMod.LOGGER.debug("webgui: update check failed: {}", unreachable.getMessage());
+            WebGUILog.LOGGER.debug("webgui: update check failed: {}", unreachable.getMessage());
             return null;
         }
     }
 
     private static boolean isNewer(String remote, String local) {
-        //? if fabric {
         try {
-            return SemanticVersion.parse(remote).compareTo(SemanticVersion.parse(local)) > 0;
-        } catch (VersionParsingException unparseable) {
-            WebGUIMod.LOGGER.debug("webgui: update check: cannot compare {} with {}", remote, local);
+            return VersionCompare.isNewer(remote, local);
+        } catch (IllegalArgumentException unparseable) {
+            WebGUILog.LOGGER.debug("webgui: update check: cannot compare {} with {}", remote, local);
             return false;
         }
-        //? } else {
-        /*return new DefaultArtifactVersion(remote).compareTo(new DefaultArtifactVersion(local)) > 0;
-        *///? }
     }
 
     private static String channelSuffix(Update found) {

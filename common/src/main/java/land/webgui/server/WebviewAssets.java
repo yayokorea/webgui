@@ -1,6 +1,7 @@
 package land.webgui.server;
 
-import land.webgui.WebGUIMod;
+import land.webgui.common.WebGUILog;
+import land.webgui.common.WebviewProtocol;
 
 import java.io.IOException;
 import java.nio.file.Files;
@@ -11,7 +12,7 @@ import java.util.List;
 import java.util.UUID;
 
 /**
- * The live view of {@code config/webgui/web/} for the running server.
+ * The live view of the {@code web} folder in the config directory for the running server.
  *
  * One store, rebuilt on start and on {@code /webgui reload}, so the operator edits
  * files and reloads rather than restarting. Reads are lock-free: the field is swapped
@@ -43,7 +44,7 @@ public final class WebviewAssets {
     public static void reload() {
         if (!WebviewServerConfig.serveBundledPages()) {
             store = WebviewAssetStore.empty();
-            WebGUIMod.LOGGER.info("webgui: bundled pages are off (serveBundledPages=false)");
+            WebGUILog.LOGGER.info("webgui: bundled pages are off (serveBundledPages=false)");
             return;
         }
 
@@ -55,19 +56,19 @@ public final class WebviewAssets {
                 writeStarterHud(root);
             }
         } catch (IOException e) {
-            WebGUIMod.LOGGER.warn("webgui: could not create {}: {}", root, e.getMessage());
+            WebGUILog.LOGGER.warn("webgui: could not create {}: {}", root, e.getMessage());
         }
 
         WebviewAssetStore scanned = WebviewAssetStore.scan(root);
         store = scanned;
 
         for (String problem : scanned.problems()) {
-            WebGUIMod.LOGGER.warn("webgui: skipped an asset — {}", problem);
+            WebGUILog.LOGGER.warn("webgui: skipped an asset — {}", problem);
         }
         if (scanned.isEmpty()) {
-            WebGUIMod.LOGGER.info("webgui: no bundled pages in {}", root);
+            WebGUILog.LOGGER.info("webgui: no bundled pages in {}", root);
         } else {
-            WebGUIMod.LOGGER.info("webgui: serving {} bundled page(s), {} KiB, revision {} from {}",
+            WebGUILog.LOGGER.info("webgui: serving {} bundled page(s), {} KiB, revision {} from {}",
                     scanned.fileCount(), scanned.totalBytes() / 1024, scanned.revision(), root);
         }
     }
@@ -96,13 +97,13 @@ public final class WebviewAssets {
         try {
             bytes = current.read(path);
         } catch (IOException e) {
-            WebGUIMod.LOGGER.warn("webgui: could not read bundled page {}: {}", path, e.getMessage());
+            WebGUILog.LOGGER.warn("webgui: could not read bundled page {}: {}", path, e.getMessage());
             return List.of();
         }
         if (bytes == null) {
             return List.of();
         }
-        return split(bytes, land.webgui.WebviewPayloads.ASSET_CHUNK_BYTES);
+        return split(bytes, WebviewProtocol.ASSET_CHUNK_BYTES);
     }
 
     /** Slices a file into transport-sized pieces. Always at least one, so empty files still arrive. */
@@ -123,6 +124,8 @@ public final class WebviewAssets {
         if (Files.exists(index)) {
             return;
         }
+        // The page names where it came from, and that differs per platform.
+        String where = WebviewServerConfig.displayDir() + "/" + root.getFileName() + "/index.html";
         Files.writeString(index, """
                 <!doctype html>
                 <meta charset="utf-8">
@@ -134,7 +137,7 @@ public final class WebviewAssets {
                 </style>
                 <div>
                   <h1>It works.</h1>
-                  <p>This page came from <code>config/webgui/web/index.html</code> on the server.</p>
+                  <p>This page came from <code>%s</code> on the server.</p>
                   <p><code>mainMenuUrl</code> already points here. Edit this file and reload.</p>
                   <p id="who"></p>
                 </div>
@@ -143,8 +146,8 @@ public final class WebviewAssets {
                     document.getElementById('who').textContent = 'Hello, ' + e.detail.username + '.';
                   });
                 </script>
-                """);
-        WebGUIMod.LOGGER.info("webgui: created a starter page at {}", index);
+                """.formatted(where));
+        WebGUILog.LOGGER.info("webgui: created a starter page at {}", index);
     }
 
     // An overlay, not a screen: it is drawn over the world, so it paints no background of its
@@ -154,6 +157,7 @@ public final class WebviewAssets {
         if (Files.exists(hud)) {
             return;
         }
+        String where = WebviewServerConfig.displayDir() + "/" + root.getFileName() + "/hud.html";
         Files.writeString(hud, """
                 <!doctype html>
                 <meta charset="utf-8">
@@ -178,11 +182,11 @@ public final class WebviewAssets {
                   <div><kbd>F6</kbd> main menu &middot; <kbd>`</kbd> interact with this overlay
                        &middot; <kbd>F12</kbd> developer tools</div>
                   <div class="dim" style="margin-top:6px">
-                    This overlay is <code>config/webgui/web/hud.html</code> on the server.
+                    This overlay is <code>%s</code> on the server.
                     Guides at <a href="https://webgui.space">webgui.space</a>.
                   </div>
                 </div>
-                """);
-        WebGUIMod.LOGGER.info("webgui: created a starter HUD page at {}", hud);
+                """.formatted(where));
+        WebGUILog.LOGGER.info("webgui: created a starter HUD page at {}", hud);
     }
 }
