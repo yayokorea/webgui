@@ -1,46 +1,63 @@
 package land.webgui;
 
-//? if fabric {
-import net.fabricmc.loader.api.FabricLoader;
-//? } else {
-/*import net.neoforged.fml.ModList;*/
-//? }
+import land.webgui.common.WebviewProtocol;
+
+import java.util.function.Supplier;
 
 /**
- * The mod's own version string, as the loader reports it.
+ * The server's own WebGUI version string, as the platform reports it.
  *
- * Read once: both loaders build this from mod metadata that cannot change while the
- * game runs, and the handshake asks for it on every join.
+ * The platform says how to find it ({@link #init}) because only it can read its own
+ * metadata; everything shared just asks. Read once on first use: the metadata cannot
+ * change while the game runs, and the handshake asks for it on every join.
  */
 public final class WebGUIVersion {
+    private static final String UNKNOWN = "unknown";
 
-    private static final String CURRENT = read();
+    private static volatile Supplier<String> source;
+    private static volatile String current;
 
     private WebGUIVersion() {}
 
-    /** e.g. {@code 1.7.0+mc1.21.11}, or {@code "unknown"} if the loader has no metadata for us. */
-    public static String current() {
-        return CURRENT;
+    /**
+     * Tells this class where the version comes from; call before anything asks for it.
+     *
+     * The supplier is not run here — loader metadata may not be readable yet at the point
+     * a mod's entrypoint runs, and nothing needs the answer until a player joins.
+     */
+    public static void init(Supplier<String> versionSource) {
+        source = versionSource;
+        current = null;
     }
 
-    private static String read() {
-        String v;
-        //? if fabric {
-        v = FabricLoader.getInstance()
-                .getModContainer(WebGUIMod.MOD_ID)
-                .map(c -> c.getMetadata().getVersion().getFriendlyString())
-                .orElse("");
-        //? } else {
-        /*v = ModList.get()
-                .getModContainerById(WebGUIMod.MOD_ID)
-                .map(c -> c.getModInfo().getVersion().toString())
-                .orElse("");*/
-        //? }
-        if (v == null || v.isBlank()) {
-            return "unknown";
+    /** e.g. {@code 1.7.0+mc1.21.11}, or {@code "unknown"} if the platform has no metadata for us. */
+    public static String current() {
+        String v = current;
+        if (v != null) {
+            return v;
         }
-        return v.length() > WebviewPayloads.MAX_VERSION_LENGTH
-                ? v.substring(0, WebviewPayloads.MAX_VERSION_LENGTH)
+        Supplier<String> s = source;
+        if (s == null) {
+            // Not cached: a later init() should still be heard.
+            return UNKNOWN;
+        }
+        v = read(s);
+        current = v;
+        return v;
+    }
+
+    /** Whether the platform actually gave us a version, rather than the {@code "unknown"} fallback. */
+    public static boolean isKnown() {
+        return !UNKNOWN.equals(current());
+    }
+
+    private static String read(Supplier<String> s) {
+        String v = s.get();
+        if (v == null || v.isBlank()) {
+            return UNKNOWN;
+        }
+        return v.length() > WebviewProtocol.MAX_VERSION_LENGTH
+                ? v.substring(0, WebviewProtocol.MAX_VERSION_LENGTH)
                 : v;
     }
 }

@@ -414,7 +414,7 @@ public final class WebviewNetworking {
         if (!WebviewServerConfig.enableTokens()) {
             return sanitizeUrl(url);
         }
-        String token = WebviewSignedToken.create(player);
+        String token = WebviewSignedToken.create(player.getUuid());
         if (token.isEmpty()) {
             return sanitizeUrl(url);
         }
@@ -545,7 +545,7 @@ public final class WebviewNetworking {
         if (!WebviewServerConfig.enableTokens()) {
             return sanitizeUrl(url);
         }
-        String token = WebviewSignedToken.create(player);
+        String token = WebviewSignedToken.create(player.getUUID());
         if (token.isEmpty()) {
             return sanitizeUrl(url);
         }

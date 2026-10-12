@@ -22,7 +22,7 @@ import java.util.Map;
  *
  * The point is to remove the one thing standing between a server owner and any of
  * this: today they need a domain, a host and a deploy pipeline before they can change
- * a button. Here they drop files in {@code config/webgui/web/} and the mod ships them
+ * a button. Here they drop files in the {@code web} folder next to the server config and the server ships them
  * down the connection the player is already on — no port to open, nothing to expose,
  * and it works behind NAT like everything else the server sends.
  *

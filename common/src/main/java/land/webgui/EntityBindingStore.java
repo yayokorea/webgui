@@ -2,12 +2,8 @@ package land.webgui;
 
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
+import land.webgui.common.WebGUILog;
 import land.webgui.server.EntityBinding;
-//? if fabric {
-import net.fabricmc.loader.api.FabricLoader;
-//? } else {
-/*import net.neoforged.fml.loading.FMLPaths;*/
-//? }
 
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
@@ -37,12 +33,20 @@ public final class EntityBindingStore {
         boolean cancelInteraction;
     }
 
+    // The directory holding entity_bindings.json (see WebviewServerConfig.displayDir). Set by the platform
+    // before load(), as for WebviewServerConfig.
+    private static volatile Path storeDir;
+
+    public static void init(Path dir) {
+        storeDir = dir;
+    }
+
     private static Path storePath() {
-        //? if fabric {
-        return FabricLoader.getInstance().getConfigDir().resolve("webgui").resolve("entity_bindings.json");
-        //? } else {
-        /*return FMLPaths.CONFIGDIR.get().resolve("webgui").resolve("entity_bindings.json");*/
-        //? }
+        Path dir = storeDir;
+        if (dir == null) {
+            throw new IllegalStateException("EntityBindingStore.init(configDir) has not been called");
+        }
+        return dir.resolve("entity_bindings.json");
     }
 
     public static void bind(UUID entityUuid, EntityBinding binding) {
@@ -77,12 +81,12 @@ public final class EntityBindingStore {
                 try {
                     bindings.put(UUID.fromString(e.entityUuid), new EntityBinding(e.urlTemplate, e.cancelInteraction));
                 } catch (IllegalArgumentException ignored) {
-                    WebGUIMod.LOGGER.warn("webgui: skipping invalid entity UUID in entity_bindings.json: {}", e.entityUuid);
+                    WebGUILog.LOGGER.warn("webgui: skipping invalid entity UUID in entity_bindings.json: {}", e.entityUuid);
                 }
             }
-            WebGUIMod.LOGGER.info("webgui: loaded {} entity binding(s) from {}", bindings.size(), path.getFileName());
+            WebGUILog.LOGGER.info("webgui: loaded {} entity binding(s) from {}", bindings.size(), path.getFileName());
         } catch (IOException ex) {
-            WebGUIMod.LOGGER.error("webgui: failed to load entity_bindings.json", ex);
+            WebGUILog.LOGGER.error("webgui: failed to load entity_bindings.json", ex);
         }
     }
 
@@ -100,7 +104,7 @@ public final class EntityBindingStore {
             Files.createDirectories(path.getParent());
             Files.writeString(path, GSON.toJson(file), StandardCharsets.UTF_8);
         } catch (IOException ex) {
-            WebGUIMod.LOGGER.error("webgui: failed to save entity_bindings.json", ex);
+            WebGUILog.LOGGER.error("webgui: failed to save entity_bindings.json", ex);
         }
     }
 }

@@ -3,12 +3,7 @@ package land.webgui.server;
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 import com.google.gson.JsonObject;
-import land.webgui.WebGUIMod;
-//? if fabric {
-import net.fabricmc.loader.api.FabricLoader;
-//? } else {
-/*import net.neoforged.fml.loading.FMLPaths;*/
-//? }
+import land.webgui.common.WebGUILog;
 
 import com.google.gson.JsonArray;
 
@@ -26,12 +21,49 @@ public final class WebviewServerConfig {
     private static final Gson GSON = new GsonBuilder().setPrettyPrinting().disableHtmlEscaping().create();
     private static final SecureRandom RANDOM = new SecureRandom();
 
+    // The directory holding server.json. Set by the platform before load():
+    // only it knows where its configuration lives.
+    private static volatile Path configDir;
+
+    /** Points the config at its directory — {@code config/webgui} on a mod loader, the data folder on Paper. */
+    public static void init(Path dir) {
+        configDir = dir;
+    }
+
+    private static Path configDir() {
+        Path dir = configDir;
+        if (dir == null) {
+            throw new IllegalStateException("WebviewServerConfig.init(configDir) has not been called");
+        }
+        return dir;
+    }
+
     private static Path configPath() {
-        //? if fabric {
-        return FabricLoader.getInstance().getConfigDir().resolve("webgui").resolve("server.json");
-        //? } else {
-        /*return FMLPaths.CONFIGDIR.get().resolve("webgui").resolve("server.json");*/
-        //? }
+        return configDir().resolve("server.json");
+    }
+
+    /**
+     * The config directory as an operator would type it: {@code config/webgui} on a mod
+     * loader, {@code plugins/WebGUI} on Paper.
+     *
+     * For messages only. Derived from the directory the platform handed over rather than
+     * written out, so the log tells a Paper admin where their file really is. Relative to
+     * the working directory because that is the server root on every platform that matters;
+     * anywhere else the absolute path is the honest answer.
+     */
+    public static String displayDir() {
+        Path configured = WebviewServerConfig.configDir;
+        if (configured == null) {
+            // Only reachable before init (a log line from code that never loaded a config),
+            // where the old fixed wording is as good a guess as any.
+            return "config/webgui";
+        }
+        Path dir = configured.toAbsolutePath().normalize();
+        Path root = Path.of("").toAbsolutePath().normalize();
+        if (dir.startsWith(root) && !dir.equals(root)) {
+            return root.relativize(dir).toString().replace('\\', '/');
+        }
+        return dir.toString();
     }
 
     private Boolean enableTokens;
@@ -47,8 +79,9 @@ public final class WebviewServerConfig {
     // Page shown instead of the vanilla death screen. Empty = keep the vanilla screen.
     private String deathScreenUrl = "";
 
-    // Serve pages from config/webgui/web/ over the players' own connection, so a server
-    // needs no web host to use any of this. Directory relative to config/webgui.
+    // Serve pages from the "web" folder of the config directory over the players' own
+    // connection, so a server needs no web host to use any of this. Directory relative to
+    // the config directory.
     private Boolean serveBundledPages;
     private String bundledPagesDir = "web";
 
@@ -74,11 +107,7 @@ public final class WebviewServerConfig {
     private WebviewServerConfig() {}
 
     private static Path examplePath() {
-        //? if fabric {
-        return FabricLoader.getInstance().getConfigDir().resolve("webgui").resolve("server.example.json");
-        //? } else {
-        /*return FMLPaths.CONFIGDIR.get().resolve("webgui").resolve("server.example.json");*/
-        //? }
+        return configDir().resolve("server.example.json");
     }
 
     private static void writeExample() {
@@ -111,7 +140,7 @@ public final class WebviewServerConfig {
             String json = GSON.toJson(o);
             Files.writeString(examplePath(), json, StandardCharsets.UTF_8);
         } catch (IOException e) {
-            WebGUIMod.LOGGER.warn("webgui: could not write server.example.json", e);
+            WebGUILog.LOGGER.warn("webgui: could not write server.example.json", e);
         }
     }
 
@@ -132,12 +161,12 @@ public final class WebviewServerConfig {
                 RANDOM.nextBytes(secret);
                 instance.tokenSecretBase64 = Base64.getEncoder().encodeToString(secret);
                 save();
-                WebGUIMod.LOGGER.info("Generated new webgui token secret (config/webgui/server.json). Copy the same secret to your web backend to verify tokens.");
+                WebGUILog.LOGGER.info("Generated new webgui token secret ({}/server.json). Copy the same secret to your web backend to verify tokens.", displayDir());
             } else {
-                WebGUIMod.LOGGER.info("Loaded webgui server config from {}", path);
+                WebGUILog.LOGGER.info("Loaded webgui server config from {}", path);
             }
         } catch (IOException e) {
-            WebGUIMod.LOGGER.error("Failed to load webgui server config", e);
+            WebGUILog.LOGGER.error("Failed to load webgui server config", e);
         }
         instance.applyDefaultsAfterLoad();
     }
@@ -203,7 +232,7 @@ public final class WebviewServerConfig {
         try {
             return Base64.getDecoder().decode(instance.tokenSecretBase64.trim());
         } catch (IllegalArgumentException e) {
-            WebGUIMod.LOGGER.error("Invalid tokenSecretBase64 in server.json");
+            WebGUILog.LOGGER.error("Invalid tokenSecretBase64 in server.json");
             return new byte[0];
         }
     }
@@ -245,15 +274,15 @@ public final class WebviewServerConfig {
         return v == null || v;
     }
 
-    /** Where those pages live, resolved under {@code config/webgui}. */
+    /** Where those pages live, resolved under the config directory. */
     public static Path bundledPagesRoot() {
         String dir = instance.bundledPagesDir;
         if (dir == null || dir.isBlank()) {
             dir = "web";
         }
-        Path base = configPath().getParent();
+        Path base = configDir();
         Path resolved = base.resolve(dir).normalize();
-        // A path escaping config/webgui would publish something the operator did not
+        // A path escaping the config directory would publish something the operator did not
         // mean to publish, and this value comes out of an editable file.
         return resolved.startsWith(base.normalize()) ? resolved : base.resolve("web");
     }
@@ -326,13 +355,13 @@ public final class WebviewServerConfig {
                 RANDOM.nextBytes(secret);
                 instance.tokenSecretBase64 = Base64.getEncoder().encodeToString(secret);
                 save();
-                WebGUIMod.LOGGER.info("webgui: generated new token secret during reload");
+                WebGUILog.LOGGER.info("webgui: generated new token secret during reload");
             }
             WebviewAssets.reload();
-            WebGUIMod.LOGGER.info("webgui: config reloaded from {}", path);
+            WebGUILog.LOGGER.info("webgui: config reloaded from {}", path);
             return "WebGUI config reloaded from " + path.getFileName();
         } catch (IOException e) {
-            WebGUIMod.LOGGER.error("webgui: failed to reload config", e);
+            WebGUILog.LOGGER.error("webgui: failed to reload config", e);
             return "Reload failed: " + e.getMessage();
         }
     }

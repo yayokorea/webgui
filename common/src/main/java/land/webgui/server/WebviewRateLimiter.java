@@ -1,6 +1,6 @@
 package land.webgui.server;
 
-import land.webgui.WebGUIMod;
+import land.webgui.common.WebGUILog;
 
 import java.util.Map;
 import java.util.UUID;
@@ -114,9 +114,9 @@ public final class WebviewRateLimiter {
         }
         if (!window.warned) {
             window.warned = true;
-            WebGUIMod.LOGGER.warn(
-                    "webgui: dropping {} from {} — over {}/s. Raise or disable {} in config/webgui/server.json if this is legitimate.",
-                    bucket.what, playerName, limitPerSecond, bucket.setting);
+            WebGUILog.LOGGER.warn(
+                    "webgui: dropping {} from {} — over {}/s. Raise or disable {} in {}/server.json if this is legitimate.",
+                    bucket.what, playerName, limitPerSecond, bucket.setting, WebviewServerConfig.displayDir());
         }
         return false;
     }

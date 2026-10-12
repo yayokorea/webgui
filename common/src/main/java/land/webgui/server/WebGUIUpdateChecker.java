@@ -2,15 +2,9 @@ package land.webgui.server;
 
 import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
-import land.webgui.WebGUIMod;
-//? if fabric {
-import net.fabricmc.loader.api.FabricLoader;
-import net.fabricmc.loader.api.SemanticVersion;
-import net.fabricmc.loader.api.VersionParsingException;
-//? } else {
-/*import net.neoforged.fml.ModList;
-import org.apache.maven.artifact.versioning.DefaultArtifactVersion;*/
-//? }
+import land.webgui.WebGUIVersion;
+import land.webgui.common.VersionCompare;
+import land.webgui.common.WebGUILog;
 
 import java.net.URI;
 import java.net.http.HttpClient;
@@ -21,25 +15,21 @@ import java.time.Duration;
 public final class WebGUIUpdateChecker {
     private WebGUIUpdateChecker() {}
 
+    /**
+     * Checks {@code updateCheckUrl} for a newer release, on a background thread.
+     *
+     * Compares against {@link WebGUIVersion#current()}, so the platform must have called
+     * {@link WebGUIVersion#init} first; with no version known there is nothing to compare.
+     */
     public static void checkAsync() {
         String url = WebviewServerConfig.updateCheckUrl();
         if (url.isEmpty()) {
             return;
         }
-        //? if fabric {
-        String current = FabricLoader.getInstance()
-                .getModContainer(WebGUIMod.MOD_ID)
-                .map(c -> c.getMetadata().getVersion().getFriendlyString())
-                .orElse("");
-        //? } else {
-        /*String current = ModList.get()
-                .getModContainerById(WebGUIMod.MOD_ID)
-                .map(c -> c.getModInfo().getVersion().toString())
-                .orElse("");*/
-        //? }
-        if (current.isEmpty()) {
+        if (!WebGUIVersion.isKnown()) {
             return;
         }
+        String current = WebGUIVersion.current();
 
         Thread t = new Thread(() -> {
             try {
@@ -56,12 +46,12 @@ public final class WebGUIUpdateChecker {
                         .build();
                 HttpResponse<String> resp = http.send(req, HttpResponse.BodyHandlers.ofString());
                 if (resp.statusCode() != 200) {
-                    WebGUIMod.LOGGER.debug("webgui: update check returned HTTP {}", resp.statusCode());
+                    WebGUILog.LOGGER.debug("webgui: update check returned HTTP {}", resp.statusCode());
                     return;
                 }
                 parseAndLog(current, resp.body(), url);
             } catch (Exception e) {
-                WebGUIMod.LOGGER.debug("webgui: update check failed: {}", e.getMessage());
+                WebGUILog.LOGGER.debug("webgui: update check failed: {}", e.getMessage());
             }
         }, "webgui-update-check");
         t.setDaemon(true);
@@ -86,11 +76,11 @@ public final class WebGUIUpdateChecker {
                     downloadUrl = o.get("html_url").getAsString();
                 }
             } else {
-                WebGUIMod.LOGGER.debug("webgui: update check: unrecognised response format");
+                WebGUILog.LOGGER.debug("webgui: update check: unrecognised response format");
                 return;
             }
         } catch (Exception e) {
-            WebGUIMod.LOGGER.debug("webgui: update check: could not parse response: {}", e.getMessage());
+            WebGUILog.LOGGER.debug("webgui: update check: could not parse response: {}", e.getMessage());
             return;
         }
 
@@ -98,27 +88,23 @@ public final class WebGUIUpdateChecker {
         String local  = stripBuildMeta(current.trim().replaceFirst("^[vV]", ""));
 
         boolean newer;
-        //? if fabric {
         try {
-            newer = SemanticVersion.parse(remote).compareTo(SemanticVersion.parse(local)) > 0;
-        } catch (VersionParsingException e) {
+            newer = VersionCompare.isNewer(remote, local);
+        } catch (IllegalArgumentException e) {
             // fallback: simple string compare is not reliable, skip
-            WebGUIMod.LOGGER.debug("webgui: update check: could not compare versions '{}' vs '{}': {}", remote, local, e.getMessage());
+            WebGUILog.LOGGER.debug("webgui: update check: could not compare versions '{}' vs '{}': {}", remote, local, e.getMessage());
             return;
         }
-        //? } else {
-        /*newer = new DefaultArtifactVersion(remote).compareTo(new DefaultArtifactVersion(local)) > 0;*/
-        //? }
 
         if (newer) {
-            WebGUIMod.LOGGER.info("┌─────────────────────────────────────────────────");
-            WebGUIMod.LOGGER.info("│ WebGUI update available: {} → {}", local, remote);
+            WebGUILog.LOGGER.info("┌─────────────────────────────────────────────────");
+            WebGUILog.LOGGER.info("│ WebGUI update available: {} → {}", local, remote);
             if (!downloadUrl.isEmpty()) {
-                WebGUIMod.LOGGER.info("│ Download: {}", downloadUrl);
+                WebGUILog.LOGGER.info("│ Download: {}", downloadUrl);
             }
-            WebGUIMod.LOGGER.info("└─────────────────────────────────────────────────");
+            WebGUILog.LOGGER.info("└─────────────────────────────────────────────────");
         } else {
-            WebGUIMod.LOGGER.debug("webgui: up to date ({} >= {})", local, remote);
+            WebGUILog.LOGGER.debug("webgui: up to date ({} >= {})", local, remote);
         }
     }
 
