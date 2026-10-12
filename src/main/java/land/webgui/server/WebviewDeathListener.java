@@ -1,16 +1,16 @@
 package land.webgui.server;
 
-import com.google.gson.JsonObject;
 import land.webgui.WebviewNetworking;
+import land.webgui.common.DeathInfoJson;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.EntityType;
-import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.damagesource.DamageSource;
 import net.minecraft.server.level.ServerPlayer;
 //? if fabric {
 import net.fabricmc.fabric.api.entity.event.v1.ServerLivingEntityEvents;
 //? } else {
-/*import net.neoforged.neoforge.common.NeoForge;
+/*import net.minecraft.world.entity.LivingEntity;
+import net.neoforged.neoforge.common.NeoForge;
 import net.neoforged.neoforge.event.entity.living.LivingDeathEvent;*/
 //? }
 
@@ -32,50 +32,6 @@ public final class WebviewDeathListener {
             }
         });
     }
-
-    private static void onPlayerDeath(ServerPlayer player, DamageSource source) {
-        String url = WebviewServerConfig.deathScreenUrl();
-        if (url.isEmpty()) {
-            return;
-        }
-        WebviewNetworking.sendDeathScreen(player, url, describe(player, source).toString());
-    }
-
-    private static JsonObject describe(ServerPlayer player, DamageSource source) {
-        JsonObject o = new JsonObject();
-        o.addProperty("cause", source == null ? "generic" : source.getMsgId());
-        o.addProperty("deathMessage", source == null
-                ? ""
-                : source.getLocalizedDeathMessage(player).getString());
-        boolean hardcore = player.level().getLevelData().isHardcore();
-        o.addProperty("hardcore", hardcore);
-        // Hardcore has no respawn button, so the page must not offer one either.
-        o.addProperty("canRespawn", !hardcore);
-        o.add("killer", killer(source));
-        return o;
-    }
-
-    private static JsonObject killer(DamageSource source) {
-        JsonObject k = new JsonObject();
-        Entity attacker = source == null ? null : source.getEntity();
-        if (attacker == null) {
-            // Fell, drowned, burned — no entity to name.
-            k.addProperty("type", "environment");
-            k.add("name", com.google.gson.JsonNull.INSTANCE);
-            k.add("uuid", com.google.gson.JsonNull.INSTANCE);
-            return k;
-        }
-        boolean isPlayer = attacker instanceof ServerPlayer;
-        k.addProperty("type", isPlayer ? "player" : "mob");
-        k.addProperty("name", attacker.getName().getString());
-        k.addProperty("uuid", attacker.getUUID().toString());
-        if (!isPlayer) {
-            // The registry id ("minecraft:zombie"), not EntityType.toString(),
-            // which yields the translation key and is awkward to match on.
-            k.addProperty("entityType", EntityType.getKey(attacker.getType()).toString());
-        }
-        return k;
-    }
     //? } else {
     /*public static void register() {
         NeoForge.EVENT_BUS.addListener(WebviewDeathListener::onLivingDeath);
@@ -83,50 +39,40 @@ public final class WebviewDeathListener {
 
     private static void onLivingDeath(LivingDeathEvent event) {
         LivingEntity entity = event.getEntity();
-        if (!(entity instanceof ServerPlayer player)) {
-            return;
+        if (entity instanceof ServerPlayer player) {
+            onPlayerDeath(player, event.getSource());
         }
+    }*/
+    //? }
+
+    private static void onPlayerDeath(ServerPlayer player, DamageSource source) {
         String url = WebviewServerConfig.deathScreenUrl();
         if (url.isEmpty()) {
             return;
         }
-        WebviewNetworking.sendDeathScreen(player, url, describe(player, event.getSource()).toString());
+        WebviewNetworking.sendDeathScreen(player, url, describe(player, source));
     }
 
-    private static JsonObject describe(ServerPlayer player, DamageSource source) {
-        JsonObject o = new JsonObject();
-        o.addProperty("cause", source == null ? "generic" : source.getMsgId());
-        o.addProperty("deathMessage", source == null
-                ? ""
-                : source.getLocalizedDeathMessage(player).getString());
+    private static String describe(ServerPlayer player, DamageSource source) {
         boolean hardcore = player.level().getLevelData().isHardcore();
-        o.addProperty("hardcore", hardcore);
-        // Hardcore has no respawn button, so the page must not offer one either.
-        o.addProperty("canRespawn", !hardcore);
-        o.add("killer", killer(source));
-        return o;
+        return DeathInfoJson.buildJson(
+                source == null ? null : source.getMsgId(),
+                source == null ? null : source.getLocalizedDeathMessage(player).getString(),
+                hardcore,
+                killer(source));
     }
 
-    private static JsonObject killer(DamageSource source) {
-        JsonObject k = new JsonObject();
+    private static DeathInfoJson.Killer killer(DamageSource source) {
         Entity attacker = source == null ? null : source.getEntity();
         if (attacker == null) {
-            // Fell, drowned, burned — no entity to name.
-            k.addProperty("type", "environment");
-            k.add("name", com.google.gson.JsonNull.INSTANCE);
-            k.add("uuid", com.google.gson.JsonNull.INSTANCE);
-            return k;
+            return DeathInfoJson.Killer.environment();
         }
-        boolean isPlayer = attacker instanceof ServerPlayer;
-        k.addProperty("type", isPlayer ? "player" : "mob");
-        k.addProperty("name", attacker.getName().getString());
-        k.addProperty("uuid", attacker.getStringUUID());
-        if (!isPlayer) {
-            // The registry id ("minecraft:zombie"), not EntityType.toString(),
-            // which yields the translation key and is awkward to match on.
-            k.addProperty("entityType", EntityType.getKey(attacker.getType()).toString());
+        String name = attacker.getName().getString();
+        if (attacker instanceof ServerPlayer) {
+            return DeathInfoJson.Killer.player(name, attacker.getUUID());
         }
-        return k;
-    }*/
-    //? }
+        // The registry id ("minecraft:zombie"), not EntityType.toString(),
+        // which yields the translation key and is awkward to match on.
+        return DeathInfoJson.Killer.mob(name, attacker.getUUID(), EntityType.getKey(attacker.getType()).toString());
+    }
 }

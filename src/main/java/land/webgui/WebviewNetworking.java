@@ -1,5 +1,6 @@
 package land.webgui;
 
+import land.webgui.common.ClientKind;
 import land.webgui.common.WebviewProtocol;
 import land.webgui.server.WebviewServerConfig;
 import land.webgui.server.WebviewServerEvents;
@@ -28,16 +29,6 @@ public final class WebviewNetworking {
     public static final int MODE_GUI = WebviewProtocol.MODE_GUI;
     public static final int MODE_HUD = WebviewProtocol.MODE_HUD;
     public static final int MAX_URL_LENGTH = WebviewProtocol.MAX_URL_LENGTH;
-
-    /** What the far end of a connection turned out to be. */
-    public enum ClientKind {
-        /** Speaks this protocol: the handshake channel is registered. */
-        CURRENT,
-        /** Has WebGUI, but an older build without the handshake channel. */
-        OUTDATED,
-        /** No WebGUI at all — a vanilla client, or one that simply does not have it. */
-        ABSENT,
-    }
 
     private WebviewNetworking() {}
 
