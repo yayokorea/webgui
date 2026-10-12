@@ -17,6 +17,8 @@ import java.nio.file.Path;
  * the mod listens on. NeoForge clients are not supported here.
  */
 public final class WebGUIPaperPlugin extends JavaPlugin {
+    private PaperJoinFlow joinFlow;
+
     @Override
     public void onEnable() {
         // First, before anything can ask for it: the handshake reads the version on every join.
@@ -32,12 +34,23 @@ public final class WebGUIPaperPlugin extends JavaPlugin {
 
         PaperNetworking.registerChannels(this);
 
+        joinFlow = new PaperJoinFlow(this);
+        getServer().getPluginManager().registerEvents(joinFlow, this);
+
+        // Enabled with players already connected (a plugin manager, or /reload): their
+        // clients registered long ago and will not do it again, so nothing would ever greet them.
+        joinFlow.adoptOnlinePlayers();
+
         WebGUILog.LOGGER.info("WebGUI {} enabled; settings in {}/server.json",
                 WebGUIVersion.current(), WebviewServerConfig.displayDir());
     }
 
     @Override
     public void onDisable() {
+        if (joinFlow != null) {
+            joinFlow.shutdown();
+            joinFlow = null;
+        }
         PaperNetworking.unregisterChannels(this);
     }
 }
