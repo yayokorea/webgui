@@ -1,5 +1,6 @@
 package land.webgui.server;
 
+import land.webgui.common.Placeholders;
 //? if fabric {
 import net.minecraft.entity.Entity;
 import net.minecraft.registry.Registries;
@@ -15,25 +16,15 @@ public final class WebviewPlaceholders {
 
     //? if fabric {
     public static String resolve(String template, ServerPlayerEntity player, Entity entity) {
-        String entityId = entity.getUuid().toString();
-        String entityType = Registries.ENTITY_TYPE.getId(entity.getType()).toString();
-        return template
-                .replace("{entity_id}",   entityId)
-                .replace("{entity_uuid}", entityId)
-                .replace("{entity_type}", entityType)
-                .replace("{player_name}", player.getName().getString())
-                .replace("{player_uuid}", player.getUuid().toString());
+        return Placeholders.resolve(template,
+                player.getName().getString(), player.getUuid(),
+                entity.getUuid(), Registries.ENTITY_TYPE.getId(entity.getType()).toString());
     }
     //? } else {
     /*public static String resolve(String template, ServerPlayer player, Entity entity) {
-        String entityId = entity.getUUID().toString();
-        String entityType = BuiltInRegistries.ENTITY_TYPE.getKey(entity.getType()).toString();
-        return template
-                .replace("{entity_id}",   entityId)
-                .replace("{entity_uuid}", entityId)
-                .replace("{entity_type}", entityType)
-                .replace("{player_name}", player.getName().getString())
-                .replace("{player_uuid}", player.getUUID().toString());
+        return Placeholders.resolve(template,
+                player.getName().getString(), player.getUUID(),
+                entity.getUUID(), BuiltInRegistries.ENTITY_TYPE.getKey(entity.getType()).toString());
     }*/
     //? }
 }

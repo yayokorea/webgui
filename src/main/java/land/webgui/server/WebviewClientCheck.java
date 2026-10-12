@@ -3,6 +3,8 @@ package land.webgui.server;
 import land.webgui.WebGUIMod;
 import land.webgui.WebGUIVersion;
 import land.webgui.WebviewNetworking;
+import land.webgui.common.ClientCheck;
+import land.webgui.common.ClientKind;
 //? if fabric {
 import net.minecraft.server.network.ServerPlayerEntity;
 import net.minecraft.text.Text;
@@ -26,37 +28,10 @@ public final class WebviewClientCheck {
 
     private WebviewClientCheck() {}
 
-    /** Whether the server has anything configured that a player without the mod would miss. */
-    private static boolean serverUsesPages() {
-        return !WebviewServerConfig.mainMenuUrl().isEmpty()
-                || !WebviewServerConfig.deathScreenUrl().isEmpty()
-                || WebviewServerConfig.autoHudOnJoin();
-    }
-
-    private static String outdatedText() {
-        return "This server runs WebGUI " + WebGUIVersion.current()
-                + " (protocol " + WebviewNetworking.PROTOCOL_VERSION + "). Your WebGUI is older and"
-                + " cannot receive its pages — update it to " + WebGUIVersion.current() + ".";
-    }
-
-    private static String absentText() {
-        return "This server runs WebGUI " + WebGUIVersion.current()
-                + " and shows some of its interface through it. Your client does not have WebGUI,"
-                + " so those pages will not appear.";
-    }
-
-    private static String kickText(WebviewNetworking.ClientKind kind) {
-        return kind == WebviewNetworking.ClientKind.OUTDATED
-                ? "Your WebGUI is out of date.\nThis server runs WebGUI " + WebGUIVersion.current()
-                        + " (protocol " + WebviewNetworking.PROTOCOL_VERSION + ")."
-                : "This server requires the WebGUI mod.\nIt runs WebGUI " + WebGUIVersion.current()
-                        + " (protocol " + WebviewNetworking.PROTOCOL_VERSION + ").";
-    }
-
     //? if fabric {
     public static boolean onJoin(ServerPlayerEntity player) {
-        WebviewNetworking.ClientKind kind = WebviewNetworking.clientKind(player);
-        if (kind == WebviewNetworking.ClientKind.CURRENT) {
+        ClientKind kind = WebviewNetworking.clientKind(player);
+        if (kind == ClientKind.CURRENT) {
             WebviewNetworking.sendHello(player);
             return true;
         }
@@ -64,23 +39,23 @@ public final class WebviewClientCheck {
         String name = player.getName().getString();
         if (WebviewServerConfig.requireClientMod()) {
             WebGUIMod.LOGGER.info("webgui: refused {} — client is {}", name, kind);
-            player.networkHandler.disconnect(Text.literal(kickText(kind)));
+            player.networkHandler.disconnect(Text.literal(ClientCheck.kickText(kind)));
             return false;
         }
 
-        if (kind == WebviewNetworking.ClientKind.OUTDATED) {
+        if (kind == ClientKind.OUTDATED) {
             WebGUIMod.LOGGER.warn("webgui: {} has an outdated WebGUI; server runs {}", name, WebGUIVersion.current());
-            player.sendMessage(Text.literal("[WebGUI] " + outdatedText()).formatted(Formatting.YELLOW), false);
-        } else if (serverUsesPages()) {
+            player.sendMessage(Text.literal("[WebGUI] " + ClientCheck.outdatedText()).formatted(Formatting.YELLOW), false);
+        } else if (ClientCheck.serverUsesPages()) {
             WebGUIMod.LOGGER.info("webgui: {} joined without WebGUI; server runs {}", name, WebGUIVersion.current());
-            player.sendMessage(Text.literal("[WebGUI] " + absentText()).formatted(Formatting.GRAY), false);
+            player.sendMessage(Text.literal("[WebGUI] " + ClientCheck.absentText()).formatted(Formatting.GRAY), false);
         }
         return true;
     }
     //? } else {
     /*public static boolean onJoin(ServerPlayer player) {
-        WebviewNetworking.ClientKind kind = WebviewNetworking.clientKind(player);
-        if (kind == WebviewNetworking.ClientKind.CURRENT) {
+        ClientKind kind = WebviewNetworking.clientKind(player);
+        if (kind == ClientKind.CURRENT) {
             WebviewNetworking.sendHello(player);
             return true;
         }
@@ -88,16 +63,16 @@ public final class WebviewClientCheck {
         String name = player.getName().getString();
         if (WebviewServerConfig.requireClientMod()) {
             WebGUIMod.LOGGER.info("webgui: refused {} - client is {}", name, kind);
-            player.connection.disconnect(Component.literal(kickText(kind)));
+            player.connection.disconnect(Component.literal(ClientCheck.kickText(kind)));
             return false;
         }
 
-        if (kind == WebviewNetworking.ClientKind.OUTDATED) {
+        if (kind == ClientKind.OUTDATED) {
             WebGUIMod.LOGGER.warn("webgui: {} has an outdated WebGUI; server runs {}", name, WebGUIVersion.current());
-            player.sendSystemMessage(Component.literal("[WebGUI] " + outdatedText()).withStyle(ChatFormatting.YELLOW));
-        } else if (serverUsesPages()) {
+            player.sendSystemMessage(Component.literal("[WebGUI] " + ClientCheck.outdatedText()).withStyle(ChatFormatting.YELLOW));
+        } else if (ClientCheck.serverUsesPages()) {
             WebGUIMod.LOGGER.info("webgui: {} joined without WebGUI; server runs {}", name, WebGUIVersion.current());
-            player.sendSystemMessage(Component.literal("[WebGUI] " + absentText()).withStyle(ChatFormatting.GRAY));
+            player.sendSystemMessage(Component.literal("[WebGUI] " + ClientCheck.absentText()).withStyle(ChatFormatting.GRAY));
         }
         return true;
     }*/
