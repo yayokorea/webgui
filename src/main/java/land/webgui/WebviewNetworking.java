@@ -2,6 +2,7 @@ package land.webgui;
 
 import land.webgui.common.ClientKind;
 import land.webgui.common.WebviewProtocol;
+import land.webgui.common.WireText;
 import land.webgui.server.WebviewServerConfig;
 import land.webgui.server.WebviewServerEvents;
 import land.webgui.server.WebviewSignedToken;
@@ -230,7 +231,7 @@ public final class WebviewNetworking {
 
     public static void emitToPage(ServerPlayerEntity player, String eventName, String jsonPayload) {
         String name = sanitizeStr(eventName, WebviewPayloads.MAX_EVENT_NAME_LENGTH);
-        String data = (jsonPayload == null || jsonPayload.isBlank()) ? "null" : sanitizeStr(jsonPayload, WebviewPayloads.MAX_EVENT_DATA_LENGTH);
+        String data = WireText.emitData(jsonPayload);
         //? if >=1.20.5 {
         ServerPlayNetworking.send(player, new WebviewPayloads.WebviewEmitS2CPayload(name, data));
         //? } else {
@@ -442,7 +443,7 @@ public final class WebviewNetworking {
 
     public static void emitToPage(ServerPlayer player, String eventName, String jsonPayload) {
         String name = sanitizeStr(eventName, WebviewPayloads.MAX_EVENT_NAME_LENGTH);
-        String data = (jsonPayload == null || jsonPayload.isBlank()) ? "null" : sanitizeStr(jsonPayload, WebviewPayloads.MAX_EVENT_DATA_LENGTH);
+        String data = WireText.emitData(jsonPayload);
         PacketDistributor.sendToPlayer(player, new WebviewPayloads.WebviewEmitS2CPayload(name, data));
     }
 
@@ -545,18 +546,12 @@ public final class WebviewNetworking {
     }*/
     //? }
 
+    // Delegates: the trimming is shared with the Paper plugin.
     private static String sanitizeUrl(String url) {
-        if (url == null) {
-            return "";
-        }
-        if (url.length() > MAX_URL_LENGTH) {
-            return url.substring(0, MAX_URL_LENGTH);
-        }
-        return url;
+        return WireText.sanitizeUrl(url);
     }
 
     private static String sanitizeStr(String s, int maxLen) {
-        if (s == null) return "";
-        return s.length() > maxLen ? s.substring(0, maxLen) : s;
+        return WireText.sanitizeStr(s, maxLen);
     }
 }
