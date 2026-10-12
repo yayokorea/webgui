@@ -37,3 +37,7 @@ stonecutter {
 }
 
 rootProject.name = 'webgui'
+
+// The Paper plugin: a plain Gradle project beside the Stonecutter versions, not one of
+// them. It compiles common/ (shared with every mod build) and talks to Fabric clients.
+include 'paper'
