@@ -1,0 +1,35 @@
+name: WebGUI
+main: land.webgui.paper.WebGUIPaperPlugin
+version: '${version}'
+api-version: '1.21'
+description: Show web pages as screens and HUDs to players running the WebGUI Fabric mod.
+website: https://webgui.space
+commands:
+  webgui:
+    description: Open web pages for players and bind them to entities.
+    usage: /<command> <gui|hud|bind|unbind|reload>
+permissions:
+  webgui.command:
+    description: Use every /webgui subcommand.
+    default: op
+    children:
+      webgui.command.gui: true
+      webgui.command.hud: true
+      webgui.command.bind: true
+      webgui.command.unbind: true
+      webgui.command.reload: true
+  webgui.command.gui:
+    description: Open a web page as a screen for players.
+    default: op
+  webgui.command.hud:
+    description: Show a web page as a HUD overlay for players.
+    default: op
+  webgui.command.bind:
+    description: Bind a web page to entities.
+    default: op
+  webgui.command.unbind:
+    description: Remove the web page bound to entities.
+    default: op
+  webgui.command.reload:
+    description: Reload server.json and entity bindings.
+    default: op
