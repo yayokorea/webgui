@@ -5,6 +5,7 @@ import land.webgui.WebGUIVersion;
 import land.webgui.common.WebGUILog;
 import land.webgui.server.WebviewAssets;
 import land.webgui.server.WebviewServerConfig;
+import org.bukkit.command.PluginCommand;
 import org.bukkit.plugin.java.JavaPlugin;
 
 import java.nio.file.Path;
@@ -36,6 +37,13 @@ public final class WebGUIPaperPlugin extends JavaPlugin {
 
         joinFlow = new PaperJoinFlow(this);
         getServer().getPluginManager().registerEvents(joinFlow, this);
+
+        PluginCommand command = getCommand("webgui");
+        if (command != null) {
+            PaperCommands commands = new PaperCommands();
+            command.setExecutor(commands);
+            command.setTabCompleter(commands);
+        }
 
         // Enabled with players already connected (a plugin manager, or /reload): their
         // clients registered long ago and will not do it again, so nothing would ever greet them.
