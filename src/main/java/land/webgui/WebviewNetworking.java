@@ -1,5 +1,6 @@
 package land.webgui;
 
+import land.webgui.common.WebviewProtocol;
 import land.webgui.server.WebviewServerConfig;
 import land.webgui.server.WebviewServerEvents;
 import land.webgui.server.WebviewSignedToken;
@@ -22,10 +23,11 @@ import net.neoforged.neoforge.network.event.RegisterPayloadHandlersEvent;*/
 //? }
 
 public final class WebviewNetworking {
-    public static final int PROTOCOL_VERSION = 1;
-    public static final int MODE_GUI = 0;
-    public static final int MODE_HUD = 1;
-    public static final int MAX_URL_LENGTH = 16384;
+    // Aliases: the values live in WebviewProtocol, shared with the Paper plugin.
+    public static final int PROTOCOL_VERSION = WebviewProtocol.PROTOCOL_VERSION;
+    public static final int MODE_GUI = WebviewProtocol.MODE_GUI;
+    public static final int MODE_HUD = WebviewProtocol.MODE_HUD;
+    public static final int MAX_URL_LENGTH = WebviewProtocol.MAX_URL_LENGTH;
 
     /** What the far end of a connection turned out to be. */
     public enum ClientKind {
