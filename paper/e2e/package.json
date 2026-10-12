@@ -1,0 +1,8 @@
+{
+  "name": "webgui-paper-e2e",
+  "private": true,
+  "description": "Headless protocol test: a bot that pretends to be a WebGUI Fabric client against a running Paper server.",
+  "type": "module",
+  "scripts": { "test": "node e2e.mjs" },
+  "dependencies": { "minecraft-protocol": "^1.68.0" }
+}
