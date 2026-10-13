@@ -39,6 +39,9 @@ public final class WebGUIPaperPlugin extends JavaPlugin {
         getServer().getPluginManager().registerEvents(joinFlow, this);
 
         getServer().getPluginManager().registerEvents(new PaperEntityBindings(), this);
+        // Always registered; the listener looks at deathScreenUrl when someone dies, so a
+        // /webgui reload that sets or clears it takes effect without a restart.
+        getServer().getPluginManager().registerEvents(new PaperDeathListener(), this);
 
         PluginCommand command = getCommand("webgui");
         if (command != null) {
