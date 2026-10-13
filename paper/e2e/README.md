@@ -17,6 +17,15 @@ page events (fire, malformed, flood), `WebGUIClientReadyEvent`, entity bindings,
 `minecraft-protocol` supports Minecraft up to 26.1, so this cannot drive Paper 26.2 or newer.
 It runs against 1.21.1 and 1.21.11.
 
+CI runs it as the `paper e2e (1.21.11)` job of `.github/workflows/build.yml`, and the FIFO
+below is what `.github/scripts/paper-smoke-test.sh 1.21.11 900 --e2e` sets up for you: it boots the
+server, checks the plugin enabled without errors, runs this test, then stops the server and checks
+the plugin disabled cleanly. `npm ci` in this folder comes first. That job is not part of the
+required "Build all versions" check, because the test is timing-based and has not run on a hosted
+runner for long.
+
+By hand:
+
 ```sh
 # 1. A server with the plugin, debug logging on, and a FIFO as its console.
 #    (paper/run/<version>/ needs eula.txt and a server.properties with online-mode=false.)
