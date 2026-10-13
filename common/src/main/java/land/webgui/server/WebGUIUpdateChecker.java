@@ -13,15 +13,25 @@ import java.net.http.HttpResponse;
 import java.time.Duration;
 
 public final class WebGUIUpdateChecker {
+    private static final String DEFAULT_PRODUCT = "WebGUI-Mod";
+
     private WebGUIUpdateChecker() {}
+
+    /** {@link #checkAsync(String)} as the WebGUI mod. */
+    public static void checkAsync() {
+        checkAsync(DEFAULT_PRODUCT);
+    }
 
     /**
      * Checks {@code updateCheckUrl} for a newer release, on a background thread.
      *
      * Compares against {@link WebGUIVersion#current()}, so the platform must have called
      * {@link WebGUIVersion#init} first; with no version known there is nothing to compare.
+     *
+     * @param product what the request's User-Agent calls this build ("WebGUI-Mod",
+     *                "WebGUI-Paper"), so an update server can tell the two apart
      */
-    public static void checkAsync() {
+    public static void checkAsync(String product) {
         String url = WebviewServerConfig.updateCheckUrl();
         if (url.isEmpty()) {
             return;
@@ -40,7 +50,7 @@ public final class WebGUIUpdateChecker {
                 HttpRequest req = HttpRequest.newBuilder()
                         .uri(URI.create(url))
                         .timeout(Duration.ofSeconds(10))
-                        .header("User-Agent", "WebGUI-Mod/" + current)
+                        .header("User-Agent", product + "/" + current)
                         .header("Accept", "application/json")
                         .GET()
                         .build();
