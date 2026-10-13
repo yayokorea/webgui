@@ -38,6 +38,8 @@ public final class WebGUIPaperPlugin extends JavaPlugin {
         joinFlow = new PaperJoinFlow(this);
         getServer().getPluginManager().registerEvents(joinFlow, this);
 
+        getServer().getPluginManager().registerEvents(new PaperEntityBindings(), this);
+
         PluginCommand command = getCommand("webgui");
         if (command != null) {
             PaperCommands commands = new PaperCommands();
