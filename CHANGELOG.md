@@ -1,5 +1,17 @@
 # Changelog
 
+## Unreleased
+
+### Added
+- **A Paper plugin.** `webgui-paper-<version>.jar` lets a Paper (or Purpur) server do what a Fabric or NeoForge server does with the mod, for players on the Fabric client. One jar runs on Paper 1.21.1 through 26.3. It is attached to the GitHub release; it is not on Modrinth or CurseForge.
+  - **Everything a mod server does:** `/webgui gui|hud|bind|unbind|reload`, the HUD that opens on join, `requireClientMod`, the notice for players without WebGUI or with an outdated one, pages hosted by the server itself, pages bound to entities (right-click), the custom death screen, and the update check. Settings are in `plugins/WebGUI/server.json`, in the same format as the mod's `server.json`.
+  - **Permissions:** `webgui.command.gui`, `.hud`, `.bind`, `.unbind` and `.reload`, all for operators by default, or `webgui.command` for the lot.
+  - **An API for other plugins:** `land.webgui.paper.api.WebGUIPaperApi` opens pages, sends events to a page and binds entities. `WebGUIClientReadyEvent` says when a player's client can receive pages, and `WebGUIPageEvent` delivers what a page sends with `postToGame`.
+  - **Limits worth knowing:** Fabric clients only; a player without WebGUI is recognised about five seconds after joining; Paper, like vanilla, disconnects a player whose single message to the server exceeds 32767 bytes, which only a very large `postToGame` can reach. See the README.
+
+### Changed
+- The code that does not depend on a loader (the wire protocol, the server settings, entity bindings, hosted pages, the update check) moved into a module shared by the mods and the Paper plugin. Behaviour of the mods is unchanged.
+
 ## 1.8.1 - 2026-09-12
 
 ### Fixed
