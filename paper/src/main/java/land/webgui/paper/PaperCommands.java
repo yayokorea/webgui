@@ -30,9 +30,10 @@ import java.util.function.Supplier;
  * /webgui unbind entity &lt;selector&gt;
  * /webgui reload
  * </pre>
- * Each subcommand has its own permission ({@code webgui.command.<name>}); entity selectors
- * additionally need whatever the server demands for selectors (vanilla's
- * {@code minecraft.command.selector}).
+ * Each subcommand has its own permission ({@code webgui.command.<name>}), and that is the only
+ * gate: selectors ({@code @a}, {@code @e[...]}) are resolved with {@code Server#selectEntities},
+ * which skips the check vanilla commands make for them ({@code minecraft.command.selector}).
+ * So whoever may run {@code /webgui gui} may target {@code @a}, with or without that permission.
  */
 final class PaperCommands implements TabExecutor {
     private static final List<String> SUBCOMMANDS = List.of("gui", "hud", "bind", "unbind", "reload");
