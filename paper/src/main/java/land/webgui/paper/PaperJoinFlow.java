@@ -4,6 +4,8 @@ import land.webgui.WebGUIVersion;
 import land.webgui.common.ClientCheck;
 import land.webgui.common.ClientKind;
 import land.webgui.common.WebGUILog;
+import land.webgui.paper.event.WebGUIClientReadyEvent;
+import land.webgui.server.WebGUIUpdateChecker;
 import land.webgui.server.WebviewRateLimiter;
 import land.webgui.server.WebviewServerConfig;
 import net.kyori.adventure.text.Component;
@@ -17,7 +19,10 @@ import org.bukkit.event.player.PlayerQuitEvent;
 import org.bukkit.event.player.PlayerRegisterChannelEvent;
 import org.bukkit.plugin.Plugin;
 
+import java.util.List;
+import java.util.Set;
 import java.util.UUID;
+import java.util.concurrent.ConcurrentHashMap;
 
 /**
  * What happens when a player joins: find out whether their client has WebGUI, tell them if
@@ -28,6 +33,11 @@ import java.util.UUID;
  * the client afterwards, so {@link JoinHandshake} waits for them first.
  */
 public final class PaperJoinFlow implements Listener {
+    // Players whose client can receive pages right now: the state behind WebGUIPaperApi.isReady.
+    // Static because the API is. Concurrent only so a read from another thread cannot corrupt
+    // it; the answer is meant for the main thread.
+    private static final Set<UUID> READY = ConcurrentHashMap.newKeySet();
+
     private final JoinHandshake handshake;
 
     public PaperJoinFlow(Plugin plugin) {
@@ -52,11 +62,30 @@ public final class PaperJoinFlow implements Listener {
 
     public void shutdown() {
         handshake.shutdown();
+        READY.clear();
+    }
+
+    /** Whether {@link WebGUIClientReadyEvent} has fired for this player and they are still online. */
+    public static boolean isReady(UUID id) {
+        return READY.contains(id);
     }
 
     @EventHandler
     public void onJoin(PlayerJoinEvent event) {
-        handshake.onJoin(event.getPlayer().getUniqueId());
+        Player player = event.getPlayer();
+        handshake.onJoin(player.getUniqueId());
+        notifyOperatorOfUpdate(player);
+    }
+
+    // As the mods do: operators only, and not when the server turned it off.
+    private static void notifyOperatorOfUpdate(Player player) {
+        if (!player.isOp()) {
+            return;
+        }
+        List<String> lines = WebGUIUpdateChecker.joinNotice();
+        for (int i = 0; i < lines.size(); i++) {
+            player.sendMessage(Component.text(lines.get(i), i == 0 ? NamedTextColor.YELLOW : NamedTextColor.GRAY));
+        }
     }
 
     @EventHandler
@@ -68,6 +97,7 @@ public final class PaperJoinFlow implements Listener {
     public void onQuit(PlayerQuitEvent event) {
         UUID id = event.getPlayer().getUniqueId();
         handshake.onQuit(id);
+        READY.remove(id);
         WebviewRateLimiter.forget(id);
     }
 
@@ -83,7 +113,20 @@ public final class PaperJoinFlow implements Listener {
         }
 
         PaperNetworking.sendConfigSnapshot(player);
+        openAutoHud(player);
 
+        // Only a client that can receive pages is "ready"; an outdated one (let in, with a
+        // warning) has nothing a plugin could usefully send to it.
+        if (kind != ClientKind.CURRENT) {
+            return;
+        }
+        // Last, so what another plugin sends from the event lands after everything above.
+        READY.add(id);
+        WebGUILog.LOGGER.debug("webgui: client ready: {} ({})", player.getName(), kind);
+        Bukkit.getPluginManager().callEvent(new WebGUIClientReadyEvent(player, kind));
+    }
+
+    private static void openAutoHud(Player player) {
         if (!WebviewServerConfig.autoHudOnJoin()) {
             return;
         }

@@ -30,6 +30,12 @@ public final class WebGUIUpdateChecker {
 
     private static final String MODRINTH_PROJECT = "tDw1xQja";
     private static final String GITHUB_REPO = "mc-webgui/webgui";
+    private static final String DEFAULT_PRODUCT = "WebGUI-Mod";
+
+    // Where the two services are. Fields rather than constants so a test can point them at a
+    // local server.
+    static volatile String modrinthApi = "https://api.modrinth.com";
+    static volatile String githubApi = "https://api.github.com";
 
     /** What was found, or null while nothing newer is known. Read from the join thread. */
     private static volatile Update available;
@@ -39,16 +45,23 @@ public final class WebGUIUpdateChecker {
     /** A version newer than the one running. */
     public record Update(String version, String url, String channel) {}
 
+    /** {@link #checkAsync(String, String)} as the WebGUI mod. */
+    public static void checkAsync(String loader) {
+        checkAsync(DEFAULT_PRODUCT, loader);
+    }
+
     /**
      * Looks for a newer version on a background thread.
      *
      * Compares against {@link WebGUIVersion#current()}, so the platform must have called
      * {@link WebGUIVersion#init} first; with no version known there is nothing to compare.
      *
-     * @param loader the Modrinth loader this build is for ({@code "fabric"}, {@code "neoforge"}),
-     *               or null where Modrinth publishes nothing for the platform, which leaves GitHub
+     * @param product what the request's User-Agent calls this build ("WebGUI-Mod",
+     *                "WebGUI-Paper"), so the services asked can tell the two apart
+     * @param loader  the Modrinth loader this build is for ({@code "fabric"}, {@code "neoforge"}),
+     *                or null where Modrinth publishes nothing for the platform, which leaves GitHub
      */
-    public static void checkAsync(String loader) {
+    public static void checkAsync(String product, String loader) {
         if (!WebGUIVersion.isKnown()) {
             return;
         }
@@ -60,9 +73,9 @@ public final class WebGUIUpdateChecker {
         String game = gameVersion(full);
 
         Thread t = new Thread(() -> {
-            Update found = loader == null ? null : fromModrinth(current, loader, game);
+            Update found = loader == null ? null : fromModrinth(product, current, loader, game);
             if (found == null) {
-                found = fromGitHub(current);
+                found = fromGitHub(product, current);
             }
             if (found == null) {
                 return;
@@ -104,14 +117,14 @@ public final class WebGUIUpdateChecker {
     }
 
     // Filtered by loader and game version, so anything that comes back can be installed here.
-    private static Update fromModrinth(String current, String loader, String game) {
+    private static Update fromModrinth(String product, String current, String loader, String game) {
         if (game.isEmpty()) {
             return null;
         }
-        String url = "https://api.modrinth.com/v2/project/" + MODRINTH_PROJECT + "/version"
+        String url = modrinthApi + "/v2/project/" + MODRINTH_PROJECT + "/version"
                 + "?loaders=" + encode("[\"" + loader + "\"]")
                 + "&game_versions=" + encode("[\"" + game + "\"]");
-        String body = get(url);
+        String body = get(product, url);
         if (body == null) {
             return null;
         }
@@ -139,8 +152,8 @@ public final class WebGUIUpdateChecker {
 
     // Newest release overall, which may have no build for this Minecraft version. Only reached
     // when Modrinth is unavailable, where an imprecise answer beats none.
-    private static Update fromGitHub(String current) {
-        String body = get("https://api.github.com/repos/" + GITHUB_REPO + "/releases/latest");
+    private static Update fromGitHub(String product, String current) {
+        String body = get(product, githubApi + "/repos/" + GITHUB_REPO + "/releases/latest");
         if (body == null) {
             return null;
         }
@@ -158,7 +171,7 @@ public final class WebGUIUpdateChecker {
         }
     }
 
-    private static String get(String url) {
+    private static String get(String product, String url) {
         try {
             HttpClient http = HttpClient.newBuilder()
                     .connectTimeout(Duration.ofSeconds(10))
@@ -167,7 +180,7 @@ public final class WebGUIUpdateChecker {
             HttpRequest request = HttpRequest.newBuilder()
                     .uri(URI.create(url))
                     .timeout(Duration.ofSeconds(10))
-                    .header("User-Agent", "WebGUI-Mod/" + WebGUIVersion.current())
+                    .header("User-Agent", product + "/" + WebGUIVersion.current())
                     .header("Accept", "application/json")
                     .GET()
                     .build();
