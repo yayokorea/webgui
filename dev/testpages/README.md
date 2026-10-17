@@ -21,6 +21,7 @@ What each page is for:
 | `input.html` | typing, selection by double click, native dropdown, cursor shapes, scroll speed |
 | `download.html` | files the page makes (including an awkward name), and one from the web |
 | `hud.html` | the overlay: see-through, glanceable, interactive on `` ` `` |
+| `hud-mockup.html` | static Korean HUD layout with sample balances, stats and a clock; no live data |
 | `death.html` | the vanilla death screen replaced, the death payload, respawn, Escape refused |
 
 The death page is the one that needs more than copying: the server only suppresses the
