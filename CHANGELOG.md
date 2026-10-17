@@ -13,6 +13,9 @@
 - Paper automatic release checks and operator update notices are disabled until Paper releases are published, so upstream mod releases are not offered as Paper downloads. Check the Build workflow artifacts for Paper updates; mod update checks are unchanged.
 - The code that does not depend on a loader (the wire protocol, the server settings, entity bindings, hosted pages, the update check) moved into a module shared by the mods and the Paper plugin. Behaviour of the mods is unchanged.
 
+### Fixed
+- Respawning from a custom death page now restores the existing HUD browser instead of disposing it together with the death page.
+
 ## 2.0.0 - 2026-10-13
 
 A major version for one reason: WebGUI no longer depends on another mod. Nothing in the page

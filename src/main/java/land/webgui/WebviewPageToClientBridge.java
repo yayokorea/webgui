@@ -105,7 +105,9 @@ public final class WebviewPageToClientBridge {
                     // second browser nothing closes. Vanilla closes the screen on
                     // its own once the respawn lands.
                     mc.player.respawn();
-                    WebSession.dispose();
+                    // Close only the death page; the parked HUD belongs to this world.
+                    WebSession.closeGuiAndRestoreHud();
+                    WebHudOverlay.onGuiClosed(mc);
                 });
             }
             case "command" -> {
