@@ -1,17 +1,18 @@
 # WebGUI
 
+[한국어](README.ko.md)
+
+> **Paper support in this fork** — This fork of [mc-webgui/webgui](https://github.com/mc-webgui/webgui) adds a [Paper server plugin](#installation-paper-server) for Paper 1.21.1–26.3. Players still need the WebGUI Fabric client mod; NeoForge clients are untested on Paper.
+>
+> Download this fork's client mod JARs and Paper plugin from the [Build workflow artifacts](https://github.com/yayokorea/webgui/actions/workflows/build.yml?query=branch%3Amain) (GitHub account required). Upstream [Modrinth downloads](https://modrinth.com/project/webgui) do not include this fork's Paper changes.
+
 **Embed any web page as a full-screen GUI or transparent HUD overlay inside Minecraft.**
 
-WebGUI is a Fabric & NeoForge mod (with a companion [Paper plugin](#installation-paper-server) for servers) that embeds a real Chromium browser (via [Rinku](https://modrinth.com/mod/rinku), the MCEF fork) directly in the game client. Server operators can display any React, Vue, or plain HTML app to their players — as a HUD overlay that auto-opens on join, or as a custom main menu accessible with a keybind.
+WebGUI is a Fabric & NeoForge mod (with a companion [Paper plugin](#installation-paper-server) for servers) that embeds a real Chromium browser (through its built-in java-cef integration) directly in the game client. Server operators can display any React, Vue, or plain HTML app to their players — as a HUD overlay that auto-opens on join, or as a custom main menu accessible with a keybind.
 
 [![Build](https://github.com/yayokorea/webgui/actions/workflows/build.yml/badge.svg?branch=main)](https://github.com/yayokorea/webgui/actions/workflows/build.yml)
 [![Modrinth](https://img.shields.io/modrinth/dt/webgui?logo=modrinth&label=Modrinth&color=1bd96a)](https://modrinth.com/project/webgui)
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
-
-This fork adds Paper server support to [upstream WebGUI](https://github.com/mc-webgui/webgui).
-The [Build workflow](https://github.com/yayokorea/webgui/actions/workflows/build.yml) provides
-client mod JARs and the Paper plugin as downloadable artifacts; upstream Modrinth downloads
-do not include this fork's Paper changes.
 
 ---
 
@@ -31,8 +32,9 @@ do not include this fork's Paper changes.
 
 | Minecraft | Loader | Status |
 |-----------|--------|--------|
-| 26.2 | NeoForge | ✅ Active |
-| 26.1 | NeoForge | ✅ Active |
+| 26.3 | Fabric & NeoForge | 🧪 Beta |
+| 26.2 | Fabric & NeoForge | ✅ Active |
+| 26.1.2 | NeoForge | ✅ Active |
 | 1.21.5 – 1.21.11 | Fabric | ✅ Active |
 | 1.21.5 – 1.21.11 | NeoForge | ✅ Active |
 | 1.21 – 1.21.1 | Fabric | ✅ Supported |
@@ -40,20 +42,20 @@ do not include this fork's Paper changes.
 | 1.20.1 | Fabric | ✅ Supported |
 | 1.21.1 – 26.3 | Paper (server plugin) | ✅ Supported — for players on the Fabric mod |
 
-Minecraft 26 builds are **NeoForge-only** — Fabric is on hold until Yarn mappings for 26.x are published.
+Minecraft 26.2 and 26.3 builds support both loaders; 26.1.2 is NeoForge-only.
 
 The Paper plugin is a **server** plugin: it does not render anything itself. The players' own game still needs the mod, and on a Paper server that means the **Fabric** one (NeoForge clients are untested there).
 
-Chromium (~150 MB) is downloaded automatically on first launch. Include [Rinku](https://modrinth.com/mod/rinku) (formerly MCEF [Keksuccino's Fork]) in your modpack to pre-bundle it.
+Chromium (~150 MB) is downloaded automatically on first launch. No separate browser mod is required.
 
 ---
 
 ## Installation
 
-1. Download the latest JAR from [Modrinth](https://modrinth.com/project/webgui) (pick the right MC version).
+1. Download this fork's client mod JAR from the [Build workflow artifacts](https://github.com/yayokorea/webgui/actions/workflows/build.yml?query=branch%3Amain) (GitHub account required), picking the right Minecraft version and loader. For upstream builds, use [Modrinth](https://modrinth.com/project/webgui); those do not include this fork's Paper changes.
 2. Place it in `.minecraft/mods/`.
    - **Fabric:** also add Fabric API. The browser library ships inside the WebGUI jar.
-   - **NeoForge:** also add [Rinku](https://modrinth.com/mod/rinku) — it is not bundled, and WebGUI cannot render a page without it.
+   - **NeoForge:** no separate browser mod is required.
 3. Start the game.
 
 ---
@@ -93,6 +95,8 @@ The Paper plugin lets a Paper (or Purpur) server do what a Fabric or NeoForge se
 2. Put it in the server's `plugins/` folder and start the server.
 3. **Players need the WebGUI mod on the Fabric client** (see [Installation](#installation) above). The server does not send the mod to them.
 4. Settings are in `plugins/WebGUI/server.json`, created on first start. It has the same format as the mod's `config/webgui/server.json` (see [Quick setup](#quick-setup-server)); `/webgui reload` re-reads it. Pages the server hosts go in `plugins/WebGUI/web/`.
+
+Paper automatic release checks are disabled until Paper releases are published. Check the [Build workflow](https://github.com/yayokorea/webgui/actions/workflows/build.yml?query=branch%3Amain) for updated artifacts; `updateNotifyInChat` has no effect on Paper.
 
 ### Commands and permissions
 
@@ -184,13 +188,15 @@ export function PlayerInfo() {
 
 ## Building from source
 
+Use JDK 25 to run Gradle and make both JDK 21 and JDK 25 available (see [CONTRIBUTING.md](CONTRIBUTING.md)).
+
 ```bash
-git clone https://github.com/mc-webgui/webgui.git
+git clone https://github.com/yayokorea/webgui.git
 cd webgui
 ./gradlew build
 ```
 
-Outputs JARs for all supported Minecraft versions to `versions/*/build/libs/`, and the Paper plugin to `paper/build/libs/` (it needs both JDK 21 and JDK 25 — see [CONTRIBUTING.md](CONTRIBUTING.md)).
+Outputs JARs for all supported Minecraft versions to `versions/*/build/libs/`, and the Paper plugin to `paper/build/libs/`.
 
 ---
 
