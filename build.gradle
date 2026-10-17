@@ -180,6 +180,13 @@ def unpackJcef = tasks.register('unpackJcef', Copy) {
 
 sourceSets.main.output.dir(layout.buildDirectory.dir('jcef-classes'), builtBy: unpackJcef)
 
+// Platform-neutral server logic, shared with the Paper plugin. It is plain Java with no
+// Stonecutter markers, so it is simply compiled alongside src/ for every version.
+sourceSets {
+    main.java.srcDir rootProject.file('common/src/main/java')
+    test.java.srcDir rootProject.file('common/src/test/java')
+}
+
 // --- Testing ---
 dependencies {
     testImplementation platform("org.junit:junit-bom:5.10.2")

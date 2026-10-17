@@ -1,5 +1,7 @@
 package land.webgui;
 
+import land.webgui.common.WebviewProtocol;
+
 //? if >=1.20.5 {
 import net.minecraft.network.RegistryFriendlyByteBuf;
 import net.minecraft.network.codec.StreamCodec;
@@ -15,59 +17,53 @@ import net.minecraft.resources.Identifier;
 public final class WebviewPayloads {
     private WebviewPayloads() {}
 
-    public static final int MAX_EVENT_NAME_LENGTH = 256;
-    public static final int MAX_EVENT_DATA_LENGTH = 32_768;
-    public static final int MAX_VERSION_LENGTH = 64;
-    /** One asset path. Longer than any sane bundle nests, short enough to bound the manifest. */
-    public static final int MAX_ASSET_PATH_LENGTH = 256;
-    /** The whole file list, sent once per join. Half of a custom payload's 1 MiB ceiling. */
-    public static final int MAX_MANIFEST_LENGTH = 512 * 1024;
-    /**
-     * Bytes per asset chunk.
-     *
-     * Well under the ceiling on either direction, and small enough that one player's
-     * download does not sit in front of everyone else's gameplay packets.
-     */
-    public static final int ASSET_CHUNK_BYTES = 32 * 1024;
+    // Aliases: the values live in WebviewProtocol, which the Paper plugin shares, so that a
+    // limit cannot differ between the codecs here and the hand-written ones there.
+    public static final int MAX_EVENT_NAME_LENGTH = WebviewProtocol.MAX_EVENT_NAME_LENGTH;
+    public static final int MAX_EVENT_DATA_LENGTH = WebviewProtocol.MAX_EVENT_DATA_LENGTH;
+    public static final int MAX_VERSION_LENGTH = WebviewProtocol.MAX_VERSION_LENGTH;
+    public static final int MAX_ASSET_PATH_LENGTH = WebviewProtocol.MAX_ASSET_PATH_LENGTH;
+    public static final int MAX_MANIFEST_LENGTH = WebviewProtocol.MAX_MANIFEST_LENGTH;
+    public static final int ASSET_CHUNK_BYTES = WebviewProtocol.ASSET_CHUNK_BYTES;
 
     // Channel identifiers — used in both legacy (1.20.1) and modern networking
     //? if >=1.21.5 {
-    public static final Identifier OPEN_WEB_CHANNEL       = Identifier.fromNamespaceAndPath(WebGUIMod.MOD_ID, "open_web");
-    public static final Identifier MAIN_MENU_CHANNEL      = Identifier.fromNamespaceAndPath(WebGUIMod.MOD_ID, "set_main_menu");
-    public static final Identifier EMIT_TO_PAGE_CHANNEL   = Identifier.fromNamespaceAndPath(WebGUIMod.MOD_ID, "emit_to_page");
-    public static final Identifier PAGE_EVENT_CHANNEL     = Identifier.fromNamespaceAndPath(WebGUIMod.MOD_ID, "page_event");
-    public static final Identifier ENTITY_CONTEXT_CHANNEL = Identifier.fromNamespaceAndPath(WebGUIMod.MOD_ID, "entity_context");
-    public static final Identifier TRUSTED_ORIGINS_CHANNEL = Identifier.fromNamespaceAndPath(WebGUIMod.MOD_ID, "trusted_origins");
-    public static final Identifier DEATH_SCREEN_CHANNEL   = Identifier.fromNamespaceAndPath(WebGUIMod.MOD_ID, "death_screen");
-    public static final Identifier HELLO_CHANNEL          = Identifier.fromNamespaceAndPath(WebGUIMod.MOD_ID, "hello");
-    public static final Identifier ASSET_MANIFEST_CHANNEL = Identifier.fromNamespaceAndPath(WebGUIMod.MOD_ID, "asset_manifest");
-    public static final Identifier ASSET_REQUEST_CHANNEL  = Identifier.fromNamespaceAndPath(WebGUIMod.MOD_ID, "asset_request");
-    public static final Identifier ASSET_CHUNK_CHANNEL    = Identifier.fromNamespaceAndPath(WebGUIMod.MOD_ID, "asset_chunk");
+    public static final Identifier OPEN_WEB_CHANNEL       = Identifier.fromNamespaceAndPath(WebviewProtocol.NAMESPACE, WebviewProtocol.PATH_OPEN_WEB);
+    public static final Identifier MAIN_MENU_CHANNEL      = Identifier.fromNamespaceAndPath(WebviewProtocol.NAMESPACE, WebviewProtocol.PATH_SET_MAIN_MENU);
+    public static final Identifier EMIT_TO_PAGE_CHANNEL   = Identifier.fromNamespaceAndPath(WebviewProtocol.NAMESPACE, WebviewProtocol.PATH_EMIT_TO_PAGE);
+    public static final Identifier PAGE_EVENT_CHANNEL     = Identifier.fromNamespaceAndPath(WebviewProtocol.NAMESPACE, WebviewProtocol.PATH_PAGE_EVENT);
+    public static final Identifier ENTITY_CONTEXT_CHANNEL = Identifier.fromNamespaceAndPath(WebviewProtocol.NAMESPACE, WebviewProtocol.PATH_ENTITY_CONTEXT);
+    public static final Identifier TRUSTED_ORIGINS_CHANNEL = Identifier.fromNamespaceAndPath(WebviewProtocol.NAMESPACE, WebviewProtocol.PATH_TRUSTED_ORIGINS);
+    public static final Identifier DEATH_SCREEN_CHANNEL   = Identifier.fromNamespaceAndPath(WebviewProtocol.NAMESPACE, WebviewProtocol.PATH_DEATH_SCREEN);
+    public static final Identifier HELLO_CHANNEL          = Identifier.fromNamespaceAndPath(WebviewProtocol.NAMESPACE, WebviewProtocol.PATH_HELLO);
+    public static final Identifier ASSET_MANIFEST_CHANNEL = Identifier.fromNamespaceAndPath(WebviewProtocol.NAMESPACE, WebviewProtocol.PATH_ASSET_MANIFEST);
+    public static final Identifier ASSET_REQUEST_CHANNEL  = Identifier.fromNamespaceAndPath(WebviewProtocol.NAMESPACE, WebviewProtocol.PATH_ASSET_REQUEST);
+    public static final Identifier ASSET_CHUNK_CHANNEL    = Identifier.fromNamespaceAndPath(WebviewProtocol.NAMESPACE, WebviewProtocol.PATH_ASSET_CHUNK);
     //? } else {
     /*//? if >=1.21 {
-    public static final ResourceLocation OPEN_WEB_CHANNEL       = ResourceLocation.fromNamespaceAndPath(WebGUIMod.MOD_ID, "open_web");
-    public static final ResourceLocation MAIN_MENU_CHANNEL      = ResourceLocation.fromNamespaceAndPath(WebGUIMod.MOD_ID, "set_main_menu");
-    public static final ResourceLocation EMIT_TO_PAGE_CHANNEL   = ResourceLocation.fromNamespaceAndPath(WebGUIMod.MOD_ID, "emit_to_page");
-    public static final ResourceLocation PAGE_EVENT_CHANNEL     = ResourceLocation.fromNamespaceAndPath(WebGUIMod.MOD_ID, "page_event");
-    public static final ResourceLocation ENTITY_CONTEXT_CHANNEL = ResourceLocation.fromNamespaceAndPath(WebGUIMod.MOD_ID, "entity_context");
-    public static final ResourceLocation TRUSTED_ORIGINS_CHANNEL = ResourceLocation.fromNamespaceAndPath(WebGUIMod.MOD_ID, "trusted_origins");
-    public static final ResourceLocation DEATH_SCREEN_CHANNEL   = ResourceLocation.fromNamespaceAndPath(WebGUIMod.MOD_ID, "death_screen");
-    public static final ResourceLocation HELLO_CHANNEL          = ResourceLocation.fromNamespaceAndPath(WebGUIMod.MOD_ID, "hello");
-    public static final ResourceLocation ASSET_MANIFEST_CHANNEL = ResourceLocation.fromNamespaceAndPath(WebGUIMod.MOD_ID, "asset_manifest");
-    public static final ResourceLocation ASSET_REQUEST_CHANNEL  = ResourceLocation.fromNamespaceAndPath(WebGUIMod.MOD_ID, "asset_request");
-    public static final ResourceLocation ASSET_CHUNK_CHANNEL    = ResourceLocation.fromNamespaceAndPath(WebGUIMod.MOD_ID, "asset_chunk");
+    public static final ResourceLocation OPEN_WEB_CHANNEL       = ResourceLocation.fromNamespaceAndPath(WebviewProtocol.NAMESPACE, WebviewProtocol.PATH_OPEN_WEB);
+    public static final ResourceLocation MAIN_MENU_CHANNEL      = ResourceLocation.fromNamespaceAndPath(WebviewProtocol.NAMESPACE, WebviewProtocol.PATH_SET_MAIN_MENU);
+    public static final ResourceLocation EMIT_TO_PAGE_CHANNEL   = ResourceLocation.fromNamespaceAndPath(WebviewProtocol.NAMESPACE, WebviewProtocol.PATH_EMIT_TO_PAGE);
+    public static final ResourceLocation PAGE_EVENT_CHANNEL     = ResourceLocation.fromNamespaceAndPath(WebviewProtocol.NAMESPACE, WebviewProtocol.PATH_PAGE_EVENT);
+    public static final ResourceLocation ENTITY_CONTEXT_CHANNEL = ResourceLocation.fromNamespaceAndPath(WebviewProtocol.NAMESPACE, WebviewProtocol.PATH_ENTITY_CONTEXT);
+    public static final ResourceLocation TRUSTED_ORIGINS_CHANNEL = ResourceLocation.fromNamespaceAndPath(WebviewProtocol.NAMESPACE, WebviewProtocol.PATH_TRUSTED_ORIGINS);
+    public static final ResourceLocation DEATH_SCREEN_CHANNEL   = ResourceLocation.fromNamespaceAndPath(WebviewProtocol.NAMESPACE, WebviewProtocol.PATH_DEATH_SCREEN);
+    public static final ResourceLocation HELLO_CHANNEL          = ResourceLocation.fromNamespaceAndPath(WebviewProtocol.NAMESPACE, WebviewProtocol.PATH_HELLO);
+    public static final ResourceLocation ASSET_MANIFEST_CHANNEL = ResourceLocation.fromNamespaceAndPath(WebviewProtocol.NAMESPACE, WebviewProtocol.PATH_ASSET_MANIFEST);
+    public static final ResourceLocation ASSET_REQUEST_CHANNEL  = ResourceLocation.fromNamespaceAndPath(WebviewProtocol.NAMESPACE, WebviewProtocol.PATH_ASSET_REQUEST);
+    public static final ResourceLocation ASSET_CHUNK_CHANNEL    = ResourceLocation.fromNamespaceAndPath(WebviewProtocol.NAMESPACE, WebviewProtocol.PATH_ASSET_CHUNK);
     //? } else {
-    public static final ResourceLocation OPEN_WEB_CHANNEL       = new ResourceLocation(WebGUIMod.MOD_ID, "open_web");
-    public static final ResourceLocation MAIN_MENU_CHANNEL      = new ResourceLocation(WebGUIMod.MOD_ID, "set_main_menu");
-    public static final ResourceLocation EMIT_TO_PAGE_CHANNEL   = new ResourceLocation(WebGUIMod.MOD_ID, "emit_to_page");
-    public static final ResourceLocation PAGE_EVENT_CHANNEL     = new ResourceLocation(WebGUIMod.MOD_ID, "page_event");
-    public static final ResourceLocation ENTITY_CONTEXT_CHANNEL = new ResourceLocation(WebGUIMod.MOD_ID, "entity_context");
-    public static final ResourceLocation TRUSTED_ORIGINS_CHANNEL = new ResourceLocation(WebGUIMod.MOD_ID, "trusted_origins");
-    public static final ResourceLocation DEATH_SCREEN_CHANNEL   = new ResourceLocation(WebGUIMod.MOD_ID, "death_screen");
-    public static final ResourceLocation HELLO_CHANNEL          = new ResourceLocation(WebGUIMod.MOD_ID, "hello");
-    public static final ResourceLocation ASSET_MANIFEST_CHANNEL = new ResourceLocation(WebGUIMod.MOD_ID, "asset_manifest");
-    public static final ResourceLocation ASSET_REQUEST_CHANNEL  = new ResourceLocation(WebGUIMod.MOD_ID, "asset_request");
-    public static final ResourceLocation ASSET_CHUNK_CHANNEL    = new ResourceLocation(WebGUIMod.MOD_ID, "asset_chunk");
+    public static final ResourceLocation OPEN_WEB_CHANNEL       = new ResourceLocation(WebviewProtocol.NAMESPACE, WebviewProtocol.PATH_OPEN_WEB);
+    public static final ResourceLocation MAIN_MENU_CHANNEL      = new ResourceLocation(WebviewProtocol.NAMESPACE, WebviewProtocol.PATH_SET_MAIN_MENU);
+    public static final ResourceLocation EMIT_TO_PAGE_CHANNEL   = new ResourceLocation(WebviewProtocol.NAMESPACE, WebviewProtocol.PATH_EMIT_TO_PAGE);
+    public static final ResourceLocation PAGE_EVENT_CHANNEL     = new ResourceLocation(WebviewProtocol.NAMESPACE, WebviewProtocol.PATH_PAGE_EVENT);
+    public static final ResourceLocation ENTITY_CONTEXT_CHANNEL = new ResourceLocation(WebviewProtocol.NAMESPACE, WebviewProtocol.PATH_ENTITY_CONTEXT);
+    public static final ResourceLocation TRUSTED_ORIGINS_CHANNEL = new ResourceLocation(WebviewProtocol.NAMESPACE, WebviewProtocol.PATH_TRUSTED_ORIGINS);
+    public static final ResourceLocation DEATH_SCREEN_CHANNEL   = new ResourceLocation(WebviewProtocol.NAMESPACE, WebviewProtocol.PATH_DEATH_SCREEN);
+    public static final ResourceLocation HELLO_CHANNEL          = new ResourceLocation(WebviewProtocol.NAMESPACE, WebviewProtocol.PATH_HELLO);
+    public static final ResourceLocation ASSET_MANIFEST_CHANNEL = new ResourceLocation(WebviewProtocol.NAMESPACE, WebviewProtocol.PATH_ASSET_MANIFEST);
+    public static final ResourceLocation ASSET_REQUEST_CHANNEL  = new ResourceLocation(WebviewProtocol.NAMESPACE, WebviewProtocol.PATH_ASSET_REQUEST);
+    public static final ResourceLocation ASSET_CHUNK_CHANNEL    = new ResourceLocation(WebviewProtocol.NAMESPACE, WebviewProtocol.PATH_ASSET_CHUNK);
     //? }
     *///? }
 
@@ -104,7 +100,7 @@ public final class WebviewPayloads {
                 StreamCodec.composite(
                         ByteBufCodecs.VAR_INT, OpenWebS2CPayload::protocolVersion,
                         ByteBufCodecs.VAR_INT, OpenWebS2CPayload::displayMode,
-                        ByteBufCodecs.stringUtf8(WebviewNetworking.MAX_URL_LENGTH), OpenWebS2CPayload::url,
+                        ByteBufCodecs.stringUtf8(WebviewProtocol.MAX_URL_LENGTH), OpenWebS2CPayload::url,
                         OpenWebS2CPayload::new);
         @Override
         public CustomPacketPayload.Type<? extends CustomPacketPayload> type() { return TYPE; }
@@ -114,7 +110,7 @@ public final class WebviewPayloads {
                 new CustomPacketPayload.Type<>(MAIN_MENU_CHANNEL);
         public static final StreamCodec<RegistryFriendlyByteBuf, WebUIMainMenuPayload> STREAM_CODEC =
                 StreamCodec.composite(
-                        ByteBufCodecs.stringUtf8(WebviewNetworking.MAX_URL_LENGTH), WebUIMainMenuPayload::url,
+                        ByteBufCodecs.stringUtf8(WebviewProtocol.MAX_URL_LENGTH), WebUIMainMenuPayload::url,
                         WebUIMainMenuPayload::new);
         @Override
         public CustomPacketPayload.Type<? extends CustomPacketPayload> type() { return TYPE; }
@@ -140,7 +136,7 @@ public final class WebviewPayloads {
                 new CustomPacketPayload.Type<>(DEATH_SCREEN_CHANNEL);
         public static final StreamCodec<RegistryFriendlyByteBuf, WebviewDeathS2CPayload> STREAM_CODEC =
                 StreamCodec.composite(
-                        ByteBufCodecs.stringUtf8(WebviewNetworking.MAX_URL_LENGTH),
+                        ByteBufCodecs.stringUtf8(WebviewProtocol.MAX_URL_LENGTH),
                         WebviewDeathS2CPayload::url,
                         ByteBufCodecs.stringUtf8(MAX_EVENT_DATA_LENGTH),
                         WebviewDeathS2CPayload::infoJson,

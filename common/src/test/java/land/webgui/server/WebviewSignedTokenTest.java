@@ -1,7 +1,6 @@
 package land.webgui.server;
 
 import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
 
 import javax.crypto.Mac;
@@ -21,16 +20,10 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
  * signed with the configured secret must verify, and any tampering, expiry, or
  * malformed input must be rejected.
  *
- * <p>Signing normally happens via {@code create(ServerPlayerEntity)} which needs
- * a live player, so these tests forge tokens with the same HMAC scheme and a
- * secret injected into {@link WebviewServerConfig} by reflection.
- *
- * <p>Tagged {@code "loader"}: touching {@link WebviewServerConfig} requires the
- * mod-loader runtime on the classpath (Fabric loom provides it for unit tests;
- * NeoForge's moddev does not), so this suite is excluded from the NeoForge
- * {@code test} run. The verification logic itself is loader-independent.
+ * <p>Most tests forge tokens with the same HMAC scheme, independently of
+ * {@code create}, and a secret injected into {@link WebviewServerConfig} by
+ * reflection, so a bug shared by signing and verifying cannot hide.
  */
-@Tag("loader")
 class WebviewSignedTokenTest {
 
     private static final byte[] SECRET = new byte[] {
@@ -78,6 +71,34 @@ class WebviewSignedTokenTest {
         assertTrue(result.isPresent(), "valid token should verify");
         assertEquals(uuid, result.get().playerId());
         assertEquals(exp, result.get().expiresAtEpochSeconds());
+    }
+
+    @Test
+    void verifiesATokenItCreated() {
+        UUID uuid = UUID.fromString("22222222-2222-2222-2222-222222222222");
+        Optional<WebviewSignedToken.VerifiedToken> result =
+                WebviewSignedToken.verify(WebviewSignedToken.create(uuid));
+
+        assertTrue(result.isPresent(), "a freshly created token should verify");
+        assertEquals(uuid, result.get().playerId());
+    }
+
+    @Test
+    void createdTokenMatchesTheDocumentedFormat() throws Exception {
+        UUID uuid = UUID.fromString("33333333-3333-3333-3333-333333333333");
+        String token = WebviewSignedToken.create(uuid);
+        // A web backend verifies these independently, so the layout is a contract:
+        // base64url("1|<uuid>|<exp>") + "." + base64url(hmac-sha256(secret, payload)).
+        String payload = new String(Base64.getUrlDecoder().decode(token.substring(0, token.indexOf('.'))), StandardCharsets.UTF_8);
+        assertTrue(payload.startsWith("1|" + uuid + "|"), payload);
+        long exp = Long.parseLong(payload.substring(payload.lastIndexOf('|') + 1));
+        assertEquals(forgeToken(uuid, exp), token);
+    }
+
+    @Test
+    void createReturnsNothingWhenNoSecretConfigured() throws Exception {
+        setConfigSecret("");
+        assertEquals("", WebviewSignedToken.create(UUID.randomUUID()));
     }
 
     @Test

@@ -9,8 +9,6 @@ import java.util.Base64;
 import java.util.Optional;
 import java.util.UUID;
 
-import net.minecraft.server.level.ServerPlayer;
-
 public final class WebviewSignedToken {
     private static final String HMAC_SHA256 = "HmacSHA256";
 
@@ -18,13 +16,13 @@ public final class WebviewSignedToken {
 
     private WebviewSignedToken() {}
 
-    public static String create(ServerPlayer player) {
+    public static String create(UUID playerId) {
         byte[] secret = WebviewServerConfig.tokenSecretBytes();
         if (secret.length == 0) {
             return "";
         }
         long exp = Instant.now().getEpochSecond() + WebviewServerConfig.tokenTtlSeconds();
-        String payload = "1|" + player.getUUID() + "|" + exp;
+        String payload = "1|" + playerId + "|" + exp;
         byte[] sig = hmac(secret, payload.getBytes(StandardCharsets.UTF_8));
         var enc = Base64.getUrlEncoder().withoutPadding();
         return enc.encodeToString(payload.getBytes(StandardCharsets.UTF_8)) + "." + enc.encodeToString(sig);

@@ -28,6 +28,12 @@ jobs:
     runs-on: ubuntu-latest
     permissions:
       contents: write
+    # Publishing needs repository secrets. A fork has none, and an upload without a token
+    # would fail the whole release; with these flags such a run builds, tests and tags
+    # but skips the uploads. Where the secrets exist nothing changes.
+    env:
+      HAS_MODRINTH_TOKEN: ${{ secrets.MODRINTH_TOKEN != '' }}
+      HAS_CURSEFORGE_TOKEN: ${{ secrets.CURSEFORGE_TOKEN != '' }}
 
     steps:
       - uses: actions/checkout@v4
@@ -108,6 +114,12 @@ jobs:
         env:
           GRADLE_OPTS: -Xmx2g
 
+      # The Paper plugin: one jar for every Paper version. `build` also compiles it against
+      # the 26.3 API, which needs the Java 25 compiler.
+      - name: Build the Paper plugin
+        if: steps.check.outputs.release == 'true'
+        run: ./gradlew :paper:build --no-daemon
+
       # Gate distribution on the full launch/server verification: nothing is
       # tagged or shipped unless the mod actually boots.
       - name: Launch test (Fabric)
@@ -122,11 +134,27 @@ jobs:
         if: steps.check.outputs.release == 'true'
         run: bash .github/scripts/server-smoke-test.sh :1.21.11-neoforge 600
 
+      # The Paper jar on the oldest, an in-between and the newest Paper it supports.
+      - name: Server smoke test (Paper)
+        if: steps.check.outputs.release == 'true'
+        run: |
+          for v in 1.21.1 1.21.11 26.3; do
+            bash .github/scripts/paper-smoke-test.sh "$v" 600 || exit 1
+          done
+
+      # The Paper plugin (paper/build/libs/webgui-paper-*.jar) is deliberately not uploaded
+      # to Modrinth or CurseForge below: it is attached to the GitHub release only.
+      - name: Note skipped uploads
+        if: steps.check.outputs.release == 'true' && (env.HAS_MODRINTH_TOKEN != 'true' || env.HAS_CURSEFORGE_TOKEN != 'true')
+        run: |
+          [ "$HAS_MODRINTH_TOKEN" = "true" ]   || echo "::notice::MODRINTH_TOKEN is not set: skipping the Modrinth uploads and their verification."
+          [ "$HAS_CURSEFORGE_TOKEN" = "true" ] || echo "::notice::CURSEFORGE_TOKEN is not set: skipping the CurseForge uploads."
+
       # Publish each jar as its own Modrinth version (one per MC version + loader)
       # BEFORE creating the git tag, so a failed upload doesn't leave a tag that
       # would make the whole release skip on re-run.
       - name: Publish 1.20.1 Fabric to Modrinth
-        if: steps.check.outputs.release == 'true' && steps.check.outputs.fabric == 'true'
+        if: steps.check.outputs.release == 'true' && steps.check.outputs.fabric == 'true' && env.HAS_MODRINTH_TOKEN == 'true'
         uses: Kir-Antipov/mc-publish@v3.3
         with:
           modrinth-id: tDw1xQja
@@ -141,7 +169,7 @@ jobs:
           files: versions/1.20.1-fabric/build/libs/!(*-@(dev|sources|javadoc)).jar
 
       - name: Publish 1.21.1 Fabric to Modrinth
-        if: steps.check.outputs.release == 'true' && steps.check.outputs.fabric == 'true'
+        if: steps.check.outputs.release == 'true' && steps.check.outputs.fabric == 'true' && env.HAS_MODRINTH_TOKEN == 'true'
         uses: Kir-Antipov/mc-publish@v3.3
         with:
           modrinth-id: tDw1xQja
@@ -156,7 +184,7 @@ jobs:
           files: versions/1.21.1-fabric/build/libs/!(*-@(dev|sources|javadoc)).jar
 
       - name: Publish 1.21.11 Fabric to Modrinth
-        if: steps.check.outputs.release == 'true' && steps.check.outputs.fabric == 'true'
+        if: steps.check.outputs.release == 'true' && steps.check.outputs.fabric == 'true' && env.HAS_MODRINTH_TOKEN == 'true'
         uses: Kir-Antipov/mc-publish@v3.3
         with:
           modrinth-id: tDw1xQja
@@ -171,7 +199,7 @@ jobs:
           files: versions/1.21.11-fabric/build/libs/!(*-@(dev|sources|javadoc)).jar
 
       - name: Publish 1.21.1 NeoForge to Modrinth
-        if: steps.check.outputs.release == 'true' && steps.check.outputs.neoforge == 'true'
+        if: steps.check.outputs.release == 'true' && steps.check.outputs.neoforge == 'true' && env.HAS_MODRINTH_TOKEN == 'true'
         uses: Kir-Antipov/mc-publish@v3.3
         with:
           modrinth-id: tDw1xQja
@@ -186,7 +214,7 @@ jobs:
           files: versions/1.21.1-neoforge/build/libs/!(*-@(dev|sources|javadoc)).jar
 
       - name: Publish 1.21.11 NeoForge to Modrinth
-        if: steps.check.outputs.release == 'true' && steps.check.outputs.neoforge == 'true'
+        if: steps.check.outputs.release == 'true' && steps.check.outputs.neoforge == 'true' && env.HAS_MODRINTH_TOKEN == 'true'
         uses: Kir-Antipov/mc-publish@v3.3
         with:
           modrinth-id: tDw1xQja
@@ -201,7 +229,7 @@ jobs:
           files: versions/1.21.11-neoforge/build/libs/!(*-@(dev|sources|javadoc)).jar
 
       - name: Publish 26.2 NeoForge to Modrinth
-        if: steps.check.outputs.release == 'true' && steps.check.outputs.neoforge == 'true'
+        if: steps.check.outputs.release == 'true' && steps.check.outputs.neoforge == 'true' && env.HAS_MODRINTH_TOKEN == 'true'
         uses: Kir-Antipov/mc-publish@v3.3
         with:
           modrinth-id: tDw1xQja
@@ -216,7 +244,7 @@ jobs:
           files: versions/26.2-neoforge/build/libs/!(*-@(dev|sources|javadoc)).jar
 
       - name: Publish 26.1.2 NeoForge to Modrinth
-        if: steps.check.outputs.release == 'true' && steps.check.outputs.neoforge == 'true'
+        if: steps.check.outputs.release == 'true' && steps.check.outputs.neoforge == 'true' && env.HAS_MODRINTH_TOKEN == 'true'
         uses: Kir-Antipov/mc-publish@v3.3
         with:
           modrinth-id: tDw1xQja
@@ -231,7 +259,7 @@ jobs:
           files: versions/26.1.2-neoforge/build/libs/!(*-@(dev|sources|javadoc)).jar
 
       - name: Publish 26.2 Fabric to Modrinth
-        if: steps.check.outputs.release == 'true' && steps.check.outputs.fabric == 'true'
+        if: steps.check.outputs.release == 'true' && steps.check.outputs.fabric == 'true' && env.HAS_MODRINTH_TOKEN == 'true'
         uses: Kir-Antipov/mc-publish@v3.3
         with:
           modrinth-id: tDw1xQja
@@ -246,7 +274,7 @@ jobs:
           files: versions/26.2-fabric/build/libs/!(*-@(dev|sources|javadoc)).jar
 
       - name: Publish 26.3 Fabric to Modrinth
-        if: steps.check.outputs.release == 'true' && steps.check.outputs.fabric == 'true'
+        if: steps.check.outputs.release == 'true' && steps.check.outputs.fabric == 'true' && env.HAS_MODRINTH_TOKEN == 'true'
         uses: Kir-Antipov/mc-publish@v3.3
         with:
           modrinth-id: tDw1xQja
@@ -261,7 +289,7 @@ jobs:
           files: versions/26.3-fabric/build/libs/!(*-@(dev|sources|javadoc)).jar
 
       - name: Publish 26.3 NeoForge to Modrinth
-        if: steps.check.outputs.release == 'true' && steps.check.outputs.neoforge == 'true'
+        if: steps.check.outputs.release == 'true' && steps.check.outputs.neoforge == 'true' && env.HAS_MODRINTH_TOKEN == 'true'
         uses: Kir-Antipov/mc-publish@v3.3
         with:
           modrinth-id: tDw1xQja
@@ -279,7 +307,7 @@ jobs:
       # repo variable is set, and never blocks the (gated) Modrinth release:
       # every step is continue-on-error.
       - name: Publish 1.20.1 Fabric to CurseForge
-        if: steps.check.outputs.release == 'true' && steps.check.outputs.fabric == 'true' && vars.CURSEFORGE_ID != ''
+        if: steps.check.outputs.release == 'true' && steps.check.outputs.fabric == 'true' && vars.CURSEFORGE_ID != '' && env.HAS_CURSEFORGE_TOKEN == 'true'
         continue-on-error: true
         uses: Kir-Antipov/mc-publish@v3.3
         with:
@@ -294,7 +322,7 @@ jobs:
           files: versions/1.20.1-fabric/build/libs/!(*-@(dev|sources|javadoc)).jar
 
       - name: Publish 1.21.1 Fabric to CurseForge
-        if: steps.check.outputs.release == 'true' && steps.check.outputs.fabric == 'true' && vars.CURSEFORGE_ID != ''
+        if: steps.check.outputs.release == 'true' && steps.check.outputs.fabric == 'true' && vars.CURSEFORGE_ID != '' && env.HAS_CURSEFORGE_TOKEN == 'true'
         continue-on-error: true
         uses: Kir-Antipov/mc-publish@v3.3
         with:
@@ -309,7 +337,7 @@ jobs:
           files: versions/1.21.1-fabric/build/libs/!(*-@(dev|sources|javadoc)).jar
 
       - name: Publish 1.21.11 Fabric to CurseForge
-        if: steps.check.outputs.release == 'true' && steps.check.outputs.fabric == 'true' && vars.CURSEFORGE_ID != ''
+        if: steps.check.outputs.release == 'true' && steps.check.outputs.fabric == 'true' && vars.CURSEFORGE_ID != '' && env.HAS_CURSEFORGE_TOKEN == 'true'
         continue-on-error: true
         uses: Kir-Antipov/mc-publish@v3.3
         with:
@@ -324,7 +352,7 @@ jobs:
           files: versions/1.21.11-fabric/build/libs/!(*-@(dev|sources|javadoc)).jar
 
       - name: Publish 1.21.1 NeoForge to CurseForge
-        if: steps.check.outputs.release == 'true' && steps.check.outputs.neoforge == 'true' && vars.CURSEFORGE_ID != ''
+        if: steps.check.outputs.release == 'true' && steps.check.outputs.neoforge == 'true' && vars.CURSEFORGE_ID != '' && env.HAS_CURSEFORGE_TOKEN == 'true'
         continue-on-error: true
         uses: Kir-Antipov/mc-publish@v3.3
         with:
@@ -339,7 +367,7 @@ jobs:
           files: versions/1.21.1-neoforge/build/libs/!(*-@(dev|sources|javadoc)).jar
 
       - name: Publish 1.21.11 NeoForge to CurseForge
-        if: steps.check.outputs.release == 'true' && steps.check.outputs.neoforge == 'true' && vars.CURSEFORGE_ID != ''
+        if: steps.check.outputs.release == 'true' && steps.check.outputs.neoforge == 'true' && vars.CURSEFORGE_ID != '' && env.HAS_CURSEFORGE_TOKEN == 'true'
         continue-on-error: true
         uses: Kir-Antipov/mc-publish@v3.3
         with:
@@ -354,7 +382,7 @@ jobs:
           files: versions/1.21.11-neoforge/build/libs/!(*-@(dev|sources|javadoc)).jar
 
       - name: Publish 26.2 NeoForge to CurseForge
-        if: steps.check.outputs.release == 'true' && steps.check.outputs.neoforge == 'true' && vars.CURSEFORGE_ID != ''
+        if: steps.check.outputs.release == 'true' && steps.check.outputs.neoforge == 'true' && vars.CURSEFORGE_ID != '' && env.HAS_CURSEFORGE_TOKEN == 'true'
         continue-on-error: true
         uses: Kir-Antipov/mc-publish@v3.3
         with:
@@ -369,7 +397,7 @@ jobs:
           files: versions/26.2-neoforge/build/libs/!(*-@(dev|sources|javadoc)).jar
 
       - name: Publish 26.1.2 NeoForge to CurseForge
-        if: steps.check.outputs.release == 'true' && steps.check.outputs.neoforge == 'true' && vars.CURSEFORGE_ID != ''
+        if: steps.check.outputs.release == 'true' && steps.check.outputs.neoforge == 'true' && vars.CURSEFORGE_ID != '' && env.HAS_CURSEFORGE_TOKEN == 'true'
         continue-on-error: true
         uses: Kir-Antipov/mc-publish@v3.3
         with:
@@ -384,7 +412,7 @@ jobs:
           files: versions/26.1.2-neoforge/build/libs/!(*-@(dev|sources|javadoc)).jar
 
       - name: Publish 26.2 Fabric to CurseForge
-        if: steps.check.outputs.release == 'true' && steps.check.outputs.fabric == 'true' && vars.CURSEFORGE_ID != ''
+        if: steps.check.outputs.release == 'true' && steps.check.outputs.fabric == 'true' && vars.CURSEFORGE_ID != '' && env.HAS_CURSEFORGE_TOKEN == 'true'
         continue-on-error: true
         uses: Kir-Antipov/mc-publish@v3.3
         with:
@@ -399,7 +427,7 @@ jobs:
           files: versions/26.2-fabric/build/libs/!(*-@(dev|sources|javadoc)).jar
 
       - name: Publish 26.3 Fabric to CurseForge
-        if: steps.check.outputs.release == 'true' && steps.check.outputs.fabric == 'true' && vars.CURSEFORGE_ID != ''
+        if: steps.check.outputs.release == 'true' && steps.check.outputs.fabric == 'true' && vars.CURSEFORGE_ID != '' && env.HAS_CURSEFORGE_TOKEN == 'true'
         continue-on-error: true
         uses: Kir-Antipov/mc-publish@v3.3
         with:
@@ -414,7 +442,7 @@ jobs:
           files: versions/26.3-fabric/build/libs/!(*-@(dev|sources|javadoc)).jar
 
       - name: Publish 26.3 NeoForge to CurseForge
-        if: steps.check.outputs.release == 'true' && steps.check.outputs.neoforge == 'true' && vars.CURSEFORGE_ID != ''
+        if: steps.check.outputs.release == 'true' && steps.check.outputs.neoforge == 'true' && vars.CURSEFORGE_ID != '' && env.HAS_CURSEFORGE_TOKEN == 'true'
         continue-on-error: true
         uses: Kir-Antipov/mc-publish@v3.3
         with:
@@ -435,7 +463,7 @@ jobs:
       # loader or the game version missing, and the API still lists it. That is
       # exactly what happened once, and the release was tagged over it.
       - name: Verify Modrinth versions
-        if: steps.check.outputs.release == 'true'
+        if: steps.check.outputs.release == 'true' && env.HAS_MODRINTH_TOKEN == 'true'
         run: |
           sleep 15
           curl -s "https://api.modrinth.com/v2/project/tDw1xQja/version?cb=${{ github.run_id }}" > versions.json
@@ -451,4 +479,5 @@ jobs:
             versions/*/build/libs/*.jar
             !versions/*/build/libs/*-dev.jar
             !versions/*/build/libs/*-sources.jar
+            paper/build/libs/webgui-paper-*.jar
           fail_on_unmatched_files: false

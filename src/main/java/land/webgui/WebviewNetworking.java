@@ -1,5 +1,8 @@
 package land.webgui;
 
+import land.webgui.common.ClientKind;
+import land.webgui.common.WebviewProtocol;
+import land.webgui.common.WireText;
 import land.webgui.server.WebviewServerConfig;
 import land.webgui.server.WebviewServerEvents;
 import land.webgui.server.WebviewSignedToken;
@@ -22,20 +25,11 @@ import net.neoforged.neoforge.network.event.RegisterPayloadHandlersEvent;*/
 //? }
 
 public final class WebviewNetworking {
-    public static final int PROTOCOL_VERSION = 1;
-    public static final int MODE_GUI = 0;
-    public static final int MODE_HUD = 1;
-    public static final int MAX_URL_LENGTH = 16384;
-
-    /** What the far end of a connection turned out to be. */
-    public enum ClientKind {
-        /** Speaks this protocol: the handshake channel is registered. */
-        CURRENT,
-        /** Has WebGUI, but an older build without the handshake channel. */
-        OUTDATED,
-        /** No WebGUI at all — a vanilla client, or one that simply does not have it. */
-        ABSENT,
-    }
+    // Aliases: the values live in WebviewProtocol, shared with the Paper plugin.
+    public static final int PROTOCOL_VERSION = WebviewProtocol.PROTOCOL_VERSION;
+    public static final int MODE_GUI = WebviewProtocol.MODE_GUI;
+    public static final int MODE_HUD = WebviewProtocol.MODE_HUD;
+    public static final int MAX_URL_LENGTH = WebviewProtocol.MAX_URL_LENGTH;
 
     private WebviewNetworking() {}
 
@@ -244,7 +238,7 @@ public final class WebviewNetworking {
 
     public static void emitToPage(ServerPlayer player, String eventName, String jsonPayload) {
         String name = sanitizeStr(eventName, WebviewPayloads.MAX_EVENT_NAME_LENGTH);
-        String data = (jsonPayload == null || jsonPayload.isBlank()) ? "null" : sanitizeStr(jsonPayload, WebviewPayloads.MAX_EVENT_DATA_LENGTH);
+        String data = WireText.emitData(jsonPayload);
         //? if >=1.20.5 {
         ServerPlayNetworking.send(player, new WebviewPayloads.WebviewEmitS2CPayload(name, data));
         //? } else {
@@ -419,7 +413,7 @@ public final class WebviewNetworking {
         if (!WebviewServerConfig.enableTokens()) {
             return sanitizeUrl(url);
         }
-        String token = WebviewSignedToken.create(player);
+        String token = WebviewSignedToken.create(player.getUUID());
         if (token.isEmpty()) {
             return sanitizeUrl(url);
         }
@@ -456,7 +450,7 @@ public final class WebviewNetworking {
 
     public static void emitToPage(ServerPlayer player, String eventName, String jsonPayload) {
         String name = sanitizeStr(eventName, WebviewPayloads.MAX_EVENT_NAME_LENGTH);
-        String data = (jsonPayload == null || jsonPayload.isBlank()) ? "null" : sanitizeStr(jsonPayload, WebviewPayloads.MAX_EVENT_DATA_LENGTH);
+        String data = WireText.emitData(jsonPayload);
         PacketDistributor.sendToPlayer(player, new WebviewPayloads.WebviewEmitS2CPayload(name, data));
     }
 
@@ -550,7 +544,7 @@ public final class WebviewNetworking {
         if (!WebviewServerConfig.enableTokens()) {
             return sanitizeUrl(url);
         }
-        String token = WebviewSignedToken.create(player);
+        String token = WebviewSignedToken.create(player.getUUID());
         if (token.isEmpty()) {
             return sanitizeUrl(url);
         }
@@ -559,18 +553,12 @@ public final class WebviewNetworking {
     }*/
     //? }
 
+    // Delegates: the trimming is shared with the Paper plugin.
     private static String sanitizeUrl(String url) {
-        if (url == null) {
-            return "";
-        }
-        if (url.length() > MAX_URL_LENGTH) {
-            return url.substring(0, MAX_URL_LENGTH);
-        }
-        return url;
+        return WireText.sanitizeUrl(url);
     }
 
     private static String sanitizeStr(String s, int maxLen) {
-        if (s == null) return "";
-        return s.length() > maxLen ? s.substring(0, maxLen) : s;
+        return WireText.sanitizeStr(s, maxLen);
     }
 }

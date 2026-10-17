@@ -1,0 +1,128 @@
+plugins {
+    id 'java'
+    id 'xyz.jpenilla.run-paper' version '3.1.0'
+}
+
+group   = maven_group
+version = mod_version
+
+// One jar for Paper 1.21.1 through 26.x. It is compiled against the oldest API so nothing
+// newer can slip in; the 26.x API is compiled against separately (see paper263 below),
+// because 26.x removes things and a plain run on 26 would only find that out at runtime.
+def paperApiMin = 'io.papermc.paper:paper-api:1.21.1-R0.1-SNAPSHOT'
+def paperApiMax = 'io.papermc.paper:paper-api:26.3.build.+'
+
+repositories {
+    mavenCentral()
+    maven { url = 'https://repo.papermc.io/repository/maven-public/' }
+}
+
+// Gson and slf4j come from the server, as do Adventure and the rest of the API: the
+// plugin ships none of them. paper-api brings them in transitively for compiling.
+dependencies {
+    compileOnly paperApiMin
+
+    testImplementation paperApiMin
+    testImplementation platform('org.junit:junit-bom:5.10.2')
+    testImplementation 'org.junit.jupiter:junit-jupiter'
+    testRuntimeOnly 'org.junit.platform:junit-platform-launcher'
+}
+
+sourceSets {
+    // The platform-neutral code is compiled into the plugin itself rather than linked as a
+    // library, exactly as it is into each mod build.
+    main {
+        java.srcDir rootProject.file('common/src/main/java')
+    }
+    test {
+        java.srcDir rootProject.file('common/src/test/java')
+    }
+    // The same sources against the newest API. Never run or shipped: it exists so that
+    // `check` fails the day a Bukkit/Paper method this plugin uses disappears.
+    paper263 {
+        java.srcDirs = sourceSets.main.java.srcDirs
+    }
+}
+
+dependencies {
+    paper263CompileOnly paperApiMax
+}
+
+java {
+    toolchain {
+        languageVersion = JavaLanguageVersion.of(21)
+    }
+}
+
+tasks.withType(JavaCompile).configureEach {
+    options.encoding = 'UTF-8'
+}
+
+tasks.named('compileJava', JavaCompile) {
+    options.release = 21
+}
+
+// Paper 26.x is built for Java 25, so its API only loads on a 25 compiler. Same source,
+// same language level as the plugin ships at.
+tasks.named('compilePaper263Java', JavaCompile) {
+    options.release = 25
+    javaCompiler = javaToolchains.compilerFor {
+        languageVersion = JavaLanguageVersion.of(25)
+    }
+}
+
+processResources {
+    inputs.property 'version', project.version
+    filesMatching('plugin.yml') {
+        expand version: project.version
+    }
+}
+
+jar {
+    archiveBaseName = 'webgui-paper'
+    archiveVersion  = project.version
+}
+
+test {
+    useJUnitPlatform()
+    testLogging {
+        events 'passed', 'skipped', 'failed'
+    }
+}
+
+tasks.named('check') {
+    dependsOn 'compilePaper263Java'
+}
+
+// --- Running a server ---
+//   ./gradlew :paper:runServer                       Paper 1.21.11 (default)
+//   ./gradlew :paper:runServer -PrunPaperVersion=26.3   any other version
+//   ./gradlew :paper:runServer263                    Paper 26.3
+// Each version gets its own world folder: opening a newer world on an older server is refused.
+def runVersion = (findProperty('runPaperVersion') ?: '1.21.11').toString()
+
+// -PrunPaperDebugLog turns on the plugin's debug logging (and mirrors the log to
+// logs/latest.log), which e2e/e2e.mjs reads to see page events arrive.
+def debugLogConfig = layout.projectDirectory.file('e2e/log4j2-debug.xml').asFile
+
+tasks.named('runServer') {
+    minecraftVersion(runVersion)
+    runDirectory = layout.projectDirectory.dir("run/${runVersion}")
+    if (findProperty('runPaperDebugLog')) {
+        jvmArgs("-Dlog4j.configurationFile=${debugLogConfig}")
+    }
+}
+
+tasks.register('runServer263', xyz.jpenilla.runpaper.task.RunServer) {
+    group = 'run paper'
+    description = 'Runs a Paper 26.3 server with the plugin.'
+    minecraftVersion('26.3')
+    runDirectory = layout.projectDirectory.dir('run/26.3')
+    pluginJars.from(tasks.named('jar').flatMap { it.archiveFile })
+    javaLauncher = javaToolchains.launcherFor {
+        languageVersion = JavaLanguageVersion.of(25)
+    }
+    if (findProperty('runPaperDebugLog')) {
+        jvmArgs("-Dlog4j.configurationFile=${debugLogConfig}")
+    }
+}
