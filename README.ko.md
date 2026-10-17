@@ -2,9 +2,14 @@
 
 [English](README.md)
 
-> **이 포크의 Paper 지원** — 이 포크는 [mc-webgui/webgui](https://github.com/mc-webgui/webgui)를 포크한 것으로, Paper 1.21.1–26.3용 [Paper 서버 플러그인](#installation-paper-server)을 추가합니다. 플레이어는 여전히 WebGUI Fabric 클라이언트 모드가 필요하며, NeoForge 클라이언트는 Paper에서 테스트되지 않았습니다.
->
-> 이 포크의 클라이언트 모드 JAR와 Paper 플러그인은 [Build 워크플로 아티팩트](https://github.com/yayokorea/webgui-paper/actions/workflows/build.yml?query=branch%3Amain)에서 내려받을 수 있습니다(GitHub 계정 필요). 업스트림의 [Modrinth 다운로드](https://modrinth.com/project/webgui)에는 이 포크의 Paper 변경 사항이 포함되어 있지 않습니다.
+## 이 포크의 변경점
+
+- **Paper 지원** — Paper 1.21.1–26.3용 [Paper 서버 플러그인](#installation-paper-server)을 추가합니다. 플레이어는 WebGUI Fabric 클라이언트 모드가 필요하며, NeoForge 클라이언트는 Paper에서 테스트되지 않았습니다.
+- **Minecraft GUI 배율 연동** — 웹 GUI와 HUD가 Minecraft의 GUI 배율과 창 크기 변경에 따른 자동 배율 조정을 따릅니다.
+
+이 포크는 [mc-webgui/webgui](https://github.com/mc-webgui/webgui)를 기반으로 합니다. 클라이언트 모드 JAR와 Paper 플러그인은 [Build 워크플로 아티팩트](https://github.com/yayokorea/webgui-paper/actions/workflows/build.yml?query=branch%3Amain)에서 내려받을 수 있습니다(GitHub 계정 필요). 업스트림의 [Modrinth 다운로드](https://modrinth.com/project/webgui)에는 이 포크의 변경 사항이 포함되어 있지 않습니다.
+
+---
 
 **어떤 웹 페이지든 Minecraft 안에서 전체 화면 GUI 또는 투명 HUD 오버레이로 임베드하세요.**
 

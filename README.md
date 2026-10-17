@@ -2,9 +2,14 @@
 
 [한국어](README.ko.md)
 
-> **Paper support in this fork** — This fork of [mc-webgui/webgui](https://github.com/mc-webgui/webgui) adds a [Paper server plugin](#installation-paper-server) for Paper 1.21.1–26.3. Players still need the WebGUI Fabric client mod; NeoForge clients are untested on Paper.
->
-> Download this fork's client mod JARs and Paper plugin from the [Build workflow artifacts](https://github.com/yayokorea/webgui-paper/actions/workflows/build.yml?query=branch%3Amain) (GitHub account required). Upstream [Modrinth downloads](https://modrinth.com/project/webgui) do not include this fork's Paper changes.
+## Changes in this fork
+
+- **Paper support** — Adds a [Paper server plugin](#installation-paper-server) for Paper 1.21.1–26.3. Players still need the WebGUI Fabric client mod; NeoForge clients are untested on Paper.
+- **Minecraft GUI scaling** — Web GUIs and HUDs follow Minecraft’s GUI Scale and automatic scale changes when resizing the window.
+
+This fork is based on [mc-webgui/webgui](https://github.com/mc-webgui/webgui). Download its client mod JARs and Paper plugin from the [Build workflow artifacts](https://github.com/yayokorea/webgui-paper/actions/workflows/build.yml?query=branch%3Amain) (GitHub account required). Upstream [Modrinth downloads](https://modrinth.com/project/webgui) do not include this fork’s changes.
+
+---
 
 **Embed any web page as a full-screen GUI or transparent HUD overlay inside Minecraft.**
 

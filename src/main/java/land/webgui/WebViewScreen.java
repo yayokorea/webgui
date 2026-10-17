@@ -76,18 +76,18 @@ public class WebViewScreen extends Screen {
         return x >= 0 && y >= 0 && x < this.width && y < this.height;
     }
 
-    // Browser view size in logical window points, independent of the GUI Scale setting.
+    // Physical texture size; WebViewLayout maps its contents into Minecraft GUI units.
     private int[] browserViewSize() {
         var window = this.minecraft.getWindow();
         return WebViewLayout.browserSize(window.getWidth(), window.getHeight());
     }
 
     private int browserLocalMouseX(double x) {
-        return (int) Math.round(x * browserViewSize()[0] / (double) getBrowserWidth());
+        return WebViewLayout.browserCoordinate(x, getBrowserWidth(), browserViewSize()[0]);
     }
 
     private int browserLocalMouseY(double y) {
-        return (int) Math.round(y * browserViewSize()[1] / (double) getBrowserHeight());
+        return WebViewLayout.browserCoordinate(y, getBrowserHeight(), browserViewSize()[1]);
     }
 
     private void resizeBrowser() {

@@ -1,63 +1,48 @@
 package land.webgui;
 
 import land.webgui.browser.WebBrowser;
-//? if <=26.2 {
-import org.lwjgl.glfw.GLFW;
-//? }
+import net.minecraft.client.Minecraft;
 
-/**
- * Sizing/scale helpers for the embedded browser. The browser view is the physical framebuffer size
- * (so its texture draws 1:1 → crisp on HiDPI), and CEF page zoom scales the content up by the OS
- * content scale so the page's CSS viewport stays logical and independent of Minecraft's GUI Scale.
- * Uses only the public {@link WebBrowser#setZoomLevel} API — no device_scale_factor, no reflection.
- */
+/** Shared coordinate policy for HUDs and screens, driven by Minecraft's GUI scale. */
 final class WebViewLayout {
+    // Shared design density for every player: two CSS pixels per vanilla GUI unit
+    // (a 24px icon occupies 12 GUI units). This makes the UI 1.5x larger than the old
+    // three-pixel density. At GUI scale 2 the page renders at its original pixel size.
+    // All other scales follow
+    // vanilla, including Auto, Unicode adjustments and HiDPI framebuffer scaling.
+    static final double CSS_PIXELS_PER_GUI_UNIT = 2.0;
+
     private WebViewLayout() {}
 
-    /** OS content scale of the current window (e.g. 2 on a Retina display), or 1 if unknown. */
-    static float contentScale() {
-        //? if >26.2 {
-        /*// The game answers this itself from 26.3, where there is no GLFW left to ask.
-        var client = net.minecraft.client.Minecraft.getInstance();
-        if (client == null || client.getWindow() == null) {
-            return 1f;
-        }
-        float density = client.getWindow().getPixelDensity();
-        return density > 0f ? density : 1f;
-        *///? } else {
-        long handle = GLFW.glfwGetCurrentContext();
-        if (handle == 0L) {
-            return 1f;
-        }
-        float[] sx = new float[1];
-        float[] sy = new float[1];
-        GLFW.glfwGetWindowContentScale(handle, sx, sy);
-        return sx[0] > 0f ? sx[0] : 1f;
-        //? }
+    static double guiScale() {
+        var client = Minecraft.getInstance();
+        return client != null && client.getWindow() != null
+                ? client.getWindow().getGuiScale() : 1.0;
     }
 
-    /** Browser view size = physical framebuffer pixels, so the OSR texture is drawn 1:1 (crisp). */
+    /** Keep the texture at framebuffer resolution; page zoom supplies the GUI transform. */
     static int[] browserSize(int framebufferWidth, int framebufferHeight) {
         return new int[] {Math.max(1, framebufferWidth), Math.max(1, framebufferHeight)};
     }
 
-    /**
-     * CEF zoom level that scales content by the content scale: {@code zoomFactor = 1.2^level}, so
-     * {@code level = log(scale) / log(1.2)}. Result: CSS viewport = framebuffer / scale (logical),
-     * rendered at framebuffer resolution. 0 when no scaling is needed.
-     */
-    static double zoomLevel() {
-        float scale = contentScale();
-        return scale > 1f ? Math.log(scale) / Math.log(1.2) : 0.0;
+    static double zoomLevel(double guiScale) {
+        return Math.log(Math.max(1.0, guiScale) / CSS_PIXELS_PER_GUI_UNIT) / Math.log(1.2);
     }
 
-    /** Applies the content-scale zoom. CEF may reset zoom on navigation, so call after load too. */
+    /**
+     * Screen mouse coordinates are GUI units; CEF input is in browser view pixels before
+     * page zoom. Use the same full-view mapping as the texture draw, including rounded GUI
+     * dimensions. Chromium itself converts these view coordinates to DOM/CSS coordinates.
+     */
+    static int browserCoordinate(double guiCoordinate, int guiExtent, int browserExtent) {
+        return (int) Math.round(guiCoordinate * browserExtent / (double) Math.max(1, guiExtent));
+    }
+
+    /** Also reapplied after navigation because Chromium can reset the origin's zoom. */
     static void applyZoom(WebBrowser browser) {
-        if (browser == null) {
-            return;
-        }
+        if (browser == null) return;
         try {
-            browser.setZoomLevel(zoomLevel());
+            browser.setZoomLevel(zoomLevel(guiScale()));
         } catch (Throwable t) {
             WebGUIMod.LOGGER.warn("[WebGUI] setZoomLevel failed: {}", t.toString());
         }

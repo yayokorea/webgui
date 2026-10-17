@@ -49,6 +49,7 @@ public final class WebHudOverlay {
     private static boolean hudInteractive;
     private static int lastPixelW = -1;
     private static int lastPixelH = -1;
+    private static double lastGuiScale = -1;
     private static boolean cursorUnlockedForWebHud;
     private static boolean restoreHudAfterGuiClose;
 
@@ -349,12 +350,12 @@ public final class WebHudOverlay {
 
     public static int toBrowserLocalX(double mouseX, Minecraft client) {
         int sw = client.getWindow().getGuiScaledWidth();
-        return (int) Math.round(mouseX * browserViewSize(client)[0] / (double) Math.max(1, sw));
+        return WebViewLayout.browserCoordinate(mouseX, sw, browserViewSize(client)[0]);
     }
 
     public static int toBrowserLocalY(double mouseY, Minecraft client) {
         int sh = client.getWindow().getGuiScaledHeight();
-        return (int) Math.round(mouseY * browserViewSize(client)[1] / (double) Math.max(1, sh));
+        return WebViewLayout.browserCoordinate(mouseY, sh, browserViewSize(client)[1]);
     }
 
     static void resizeBrowser(Minecraft client) {
@@ -367,13 +368,19 @@ public final class WebHudOverlay {
         int pxH = size[1];
         if (pxW != lastPixelW || pxH != lastPixelH) {
             browser.resize(pxW, pxH);
-            WebViewLayout.applyZoom(browser);
             lastPixelW = pxW;
             lastPixelH = pxH;
+            lastGuiScale = -1;
+        }
+        // GUI scale can change without any framebuffer resize (the settings slider).
+        double guiScale = WebViewLayout.guiScale();
+        if (guiScale != lastGuiScale) {
+            WebViewLayout.applyZoom(browser);
+            lastGuiScale = guiScale;
         }
     }
 
-    // Browser view size = physical framebuffer px; page zoom keeps the CSS viewport logical.
+    // Physical texture size; page zoom maps CSS pixels into Minecraft GUI units.
     private static int[] browserViewSize(Minecraft client) {
         var window = client.getWindow();
         return WebViewLayout.browserSize(window.getWidth(), window.getHeight());
