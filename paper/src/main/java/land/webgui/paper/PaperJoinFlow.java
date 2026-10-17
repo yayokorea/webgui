@@ -5,7 +5,6 @@ import land.webgui.common.ClientCheck;
 import land.webgui.common.ClientKind;
 import land.webgui.common.WebGUILog;
 import land.webgui.paper.event.WebGUIClientReadyEvent;
-import land.webgui.server.WebGUIUpdateChecker;
 import land.webgui.server.WebviewRateLimiter;
 import land.webgui.server.WebviewServerConfig;
 import net.kyori.adventure.text.Component;
@@ -19,7 +18,6 @@ import org.bukkit.event.player.PlayerQuitEvent;
 import org.bukkit.event.player.PlayerRegisterChannelEvent;
 import org.bukkit.plugin.Plugin;
 
-import java.util.List;
 import java.util.Set;
 import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
@@ -74,18 +72,6 @@ public final class PaperJoinFlow implements Listener {
     public void onJoin(PlayerJoinEvent event) {
         Player player = event.getPlayer();
         handshake.onJoin(player.getUniqueId());
-        notifyOperatorOfUpdate(player);
-    }
-
-    // As the mods do: operators only, and not when the server turned it off.
-    private static void notifyOperatorOfUpdate(Player player) {
-        if (!player.isOp()) {
-            return;
-        }
-        List<String> lines = WebGUIUpdateChecker.joinNotice();
-        for (int i = 0; i < lines.size(); i++) {
-            player.sendMessage(Component.text(lines.get(i), i == 0 ? NamedTextColor.YELLOW : NamedTextColor.GRAY));
-        }
     }
 
     @EventHandler

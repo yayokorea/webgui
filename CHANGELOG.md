@@ -3,13 +3,14 @@
 ## Unreleased
 
 ### Added
-- **A Paper plugin.** `webgui-paper-<version>.jar` lets a Paper (or Purpur) server do what a Fabric or NeoForge server does with the mod, for players on the Fabric client. One jar runs on Paper 1.21.1 through 26.3. It is attached to the GitHub release; it is not on Modrinth or CurseForge.
-  - **Everything a mod server does:** `/webgui gui|hud|bind|unbind|reload`, the HUD that opens on join, `requireClientMod`, the notice for players without WebGUI or with an outdated one, pages hosted by the server itself, pages bound to entities (right-click), the custom death screen, and the update check (against GitHub releases, since Modrinth carries no Paper builds; operators are told in chat on join, as on the mods). Settings are in `plugins/WebGUI/server.json`, in the same format as the mod's `server.json`.
+- **A Paper plugin.** `webgui-paper-<version>.jar` lets a Paper (or Purpur) server do what a Fabric or NeoForge server does with the mod, for players on the Fabric client. One jar runs on Paper 1.21.1 through 26.3. This fork distributes it through the GitHub Actions Build workflow artifacts, not releases, Modrinth, or CurseForge.
+  - **Server features:** `/webgui gui|hud|bind|unbind|reload`, the HUD that opens on join, `requireClientMod`, the notice for players without WebGUI or with an outdated one, pages hosted by the server itself, pages bound to entities (right-click), and the custom death screen. Settings are in `plugins/WebGUI/server.json`, in the same format as the mod's `server.json`.
   - **Permissions:** `webgui.command.gui`, `.hud`, `.bind`, `.unbind` and `.reload`, all for operators by default, or `webgui.command` for the lot.
   - **An API for other plugins:** `land.webgui.paper.api.WebGUIPaperApi` opens pages, sends events to a page and binds entities. `WebGUIClientReadyEvent` says when a player's client can receive pages, and `WebGUIPageEvent` delivers what a page sends with `postToGame`.
   - **Limits worth knowing:** Fabric clients only; a player without WebGUI is recognised about five seconds after joining; Paper, like vanilla, disconnects a player whose single message to the server exceeds 32767 bytes, which only a very large `postToGame` can reach. See the README.
 
 ### Changed
+- Paper automatic release checks and operator update notices are disabled until Paper releases are published, so upstream mod releases are not offered as Paper downloads. Check the Build workflow artifacts for Paper updates; mod update checks are unchanged.
 - The code that does not depend on a loader (the wire protocol, the server settings, entity bindings, hosted pages, the update check) moved into a module shared by the mods and the Paper plugin. Behaviour of the mods is unchanged.
 
 ## 2.0.0 - 2026-10-13

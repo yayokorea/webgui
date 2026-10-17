@@ -3,7 +3,6 @@ package land.webgui.paper;
 import land.webgui.EntityBindingStore;
 import land.webgui.WebGUIVersion;
 import land.webgui.common.WebGUILog;
-import land.webgui.server.WebGUIUpdateChecker;
 import land.webgui.server.WebviewAssets;
 import land.webgui.server.WebviewServerConfig;
 import org.bukkit.command.PluginCommand;
@@ -19,9 +18,6 @@ import java.nio.file.Path;
  * the mod listens on. NeoForge clients are not supported here.
  */
 public final class WebGUIPaperPlugin extends JavaPlugin {
-    /** Identifies this build to Modrinth and GitHub, as "WebGUI-Mod" does for the mods. */
-    private static final String UPDATE_CHECK_PRODUCT = "WebGUI-Paper";
-
     private PaperJoinFlow joinFlow;
 
     @Override
@@ -58,10 +54,8 @@ public final class WebGUIPaperPlugin extends JavaPlugin {
         // clients registered long ago and will not do it again, so nothing would ever greet them.
         joinFlow.adoptOnlinePlayers();
 
-        // The mod checks when its server has started. A task scheduled from onEnable first
-        // runs on the first tick after startup has finished (or the next tick, when the
-        // plugin is enabled later), and the check is asynchronous from there.
-        getServer().getScheduler().runTask(this, () -> WebGUIUpdateChecker.checkAsync(UPDATE_CHECK_PRODUCT, null));
+        // Paper is distributed through Actions artifacts, not releases. Do not offer
+        // upstream mod releases as plugin updates until Paper releases are published.
 
         WebGUILog.LOGGER.info("WebGUI {} enabled; settings in {}/server.json",
                 WebGUIVersion.current(), WebviewServerConfig.displayDir());
