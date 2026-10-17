@@ -16,13 +16,13 @@ For new features, please open a Feature Request issue and wait for a response be
 ## Development setup
 
 ```bash
-git clone https://github.com/mc-webgui/webgui.git
-cd webgui
-./gradlew build          # build all MC versions
-./gradlew :1.21.11:runClient  # launch game with the mod
+git clone https://github.com/yayokorea/webgui-paper.git
+cd webgui-paper
+./gradlew build                         # build all mod targets and the Paper plugin
+./gradlew :1.21.11-fabric:runClient      # launch the Fabric client
 ```
 
-Requires Java 21. All three supported Minecraft versions build from the same source.
+Run Gradle with JDK 25 (`JAVA_HOME` must point to it), and make both JDK 21 and JDK 25 available for compilation. All mod targets in `settings.gradle` build from the same source; their task paths include the loader, such as `:1.21.11-fabric:build` or `:1.21.11-neoforge:build`.
 
 ## The Paper plugin
 
@@ -64,9 +64,9 @@ Two checks run in CI, and both can be run locally:
 
 1. Add one line to `settings.gradle`:
    ```groovy
-   version '1.22', '1.22'
+   version '1.22-fabric', '1.22-fabric'
    ```
-2. Create `versions/1.22/gradle.properties` with MC-specific dependency versions.
+2. Create `versions/1.22-fabric/gradle.properties` with MC-specific dependency versions.
 3. Add version-conditional code with Stonecutter syntax if the MC API changed:
    ```java
    //? if mc >= 1.22 {
@@ -89,7 +89,8 @@ Two checks run in CI, and both can be run locally:
 
 - Standard Java conventions
 - No unused imports
-- Keep it simple — this is a client mod
+- Keep it simple
+- Write documentation, code comments, and commit messages in English; preserve translations, locales, and multilingual test data.
 
 ## License
 
