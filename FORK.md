@@ -5,7 +5,7 @@
 - `origin`: `https://github.com/mc-webgui/webgui.git` — 업스트림을 가져오는 원격
 - `fork`: `git@github.com:yayokorea/webgui.git` — 통합한 코드를 올리는 원격
 - 로컬 `main`의 추적 대상: `fork/main`
-- `feat/paper-server`: Paper 지원을 개발했던 기존 브랜치. 2.0.0 기반 작업은 `main`에 병합되어 있다.
+- Paper 지원을 개발했던 `feat/paper-server`는 `main`에 병합한 뒤 로컬과 fork에서 삭제했다.
 - `archive/paper-server-on-1.8.1` 태그: rebase 전 Paper 작업 보관본
 
 ## 업스트림 반영
