@@ -4,9 +4,14 @@
 
 WebGUI is a Fabric & NeoForge mod (with a companion [Paper plugin](#installation-paper-server) for servers) that embeds a real Chromium browser (via [Rinku](https://modrinth.com/mod/rinku), the MCEF fork) directly in the game client. Server operators can display any React, Vue, or plain HTML app to their players — as a HUD overlay that auto-opens on join, or as a custom main menu accessible with a keybind.
 
-[![Build](https://github.com/mc-webgui/webgui/actions/workflows/build.yml/badge.svg)](https://github.com/mc-webgui/webgui/actions/workflows/build.yml)
+[![Build](https://github.com/yayokorea/webgui/actions/workflows/build.yml/badge.svg?branch=main)](https://github.com/yayokorea/webgui/actions/workflows/build.yml)
 [![Modrinth](https://img.shields.io/modrinth/dt/webgui?logo=modrinth&label=Modrinth&color=1bd96a)](https://modrinth.com/project/webgui)
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
+
+This fork adds Paper server support to [upstream WebGUI](https://github.com/mc-webgui/webgui).
+The [Build workflow](https://github.com/yayokorea/webgui/actions/workflows/build.yml) provides
+client mod JARs and the Paper plugin as downloadable artifacts; upstream Modrinth downloads
+do not include this fork's Paper changes.
 
 ---
 
@@ -84,7 +89,7 @@ Requires operator level 2. Supports `fabric-permissions-api` (LuckPerms, etc.).
 
 The Paper plugin lets a Paper (or Purpur) server do what a Fabric or NeoForge server does with the mod: open pages for players, show a HUD on join, host the server's own pages, bind pages to entities and replace the death screen. One jar covers Paper 1.21.1 through 26.3.
 
-1. Take `webgui-paper-<version>.jar` from the [GitHub releases](https://github.com/mc-webgui/webgui/releases), or build it yourself (`./gradlew :paper:build`, the jar is in `paper/build/libs/`).
+1. Download `build-artifacts-paper` from a successful [Build run](https://github.com/yayokorea/webgui/actions/workflows/build.yml?query=branch%3Amain) and extract `webgui-paper-<version>.jar`, or build it yourself (`./gradlew :paper:build`, the jar is in `paper/build/libs/`). Downloading Actions artifacts requires a GitHub account.
 2. Put it in the server's `plugins/` folder and start the server.
 3. **Players need the WebGUI mod on the Fabric client** (see [Installation](#installation) above). The server does not send the mod to them.
 4. Settings are in `plugins/WebGUI/server.json`, created on first start. It has the same format as the mod's `config/webgui/server.json` (see [Quick setup](#quick-setup-server)); `/webgui reload` re-reads it. Pages the server hosts go in `plugins/WebGUI/web/`.

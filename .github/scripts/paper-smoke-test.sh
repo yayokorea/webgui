@@ -72,6 +72,9 @@ mkfifo "$CONSOLE"
 exec 3<>"$CONSOLE"
 
 cleanup() {
+    # Keep the Gradle console output for the CI diagnostic artifact, including
+    # failures that occur before Paper creates its own logs/latest.log.
+    [[ ! -f "$LOG" ]] || cp "$LOG" "$RUN_DIR/smoke-test.log"
     # setsid made the Gradle run a group leader of its own; its server JVM is in that group.
     if [[ -n "${PGID:-}" ]]; then
         kill -TERM -- "-$PGID" 2>/dev/null || true
@@ -85,7 +88,7 @@ trap cleanup EXIT
 
 echo "==> Booting Paper ${VERSION} (${TASK[*]}, timeout ${TIMEOUT}s)"
 # shellcheck disable=SC2086  # GRADLE_ARGS is meant to be word-split
-setsid ./gradlew "${TASK[@]}" --console=plain --no-daemon ${GRADLE_ARGS:-} <&3 >"$LOG" 2>&1 &
+setsid ./gradlew "${TASK[@]}" --configure-on-demand --console=plain --no-daemon ${GRADLE_ARGS:-} <&3 >"$LOG" 2>&1 &
 GRADLE_PID=$!
 PGID=$GRADLE_PID
 

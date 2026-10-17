@@ -3,17 +3,29 @@ name: Build
 on:
   push:
     branches: [main]
+    paths-ignore:
+      - '**/*.md'
+      - LICENSE
+      - '.github/ISSUE_TEMPLATE/**'
   pull_request:
+    paths-ignore:
+      - '**/*.md'
+      - LICENSE
+      - '.github/ISSUE_TEMPLATE/**'
   workflow_dispatch:
 
+permissions:
+  contents: read
+
 concurrency:
-  group: build-${{ github.ref }}
+  group: build-${{ github.event.pull_request.number || github.ref }}
   cancel-in-progress: true
 
 jobs:
   build:
     name: build (${{ matrix.version }})
     runs-on: ubuntu-latest
+    timeout-minutes: 45
     strategy:
       fail-fast: false
       matrix:
@@ -37,10 +49,10 @@ jobs:
           - version: 26.3-fabric
           - version: 26.3-neoforge
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
 
       # Both: Loom needs 25 to configure any target, the pre-26 ones compile against 21.
-      - uses: actions/setup-java@v4
+      - uses: actions/setup-java@v6
         with:
           java-version: |
             21
@@ -67,22 +79,37 @@ jobs:
 
       - name: Upload artifacts
         if: success()
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: build-artifacts-${{ matrix.version }}
           path: 'versions/${{ matrix.version }}/build/libs/*.jar'
           if-no-files-found: error
           retention-days: 30
 
+      - name: Upload build diagnostics
+        if: failure()
+        uses: actions/upload-artifact@v7
+        with:
+          name: diagnostics-${{ matrix.version }}
+          path: |
+            versions/${{ matrix.version }}/build/reports/
+            versions/${{ matrix.version }}/build/test-results/
+            versions/${{ matrix.version }}/run/logs/
+            versions/${{ matrix.version }}/run/crash-reports/
+            versions/${{ matrix.version }}/run/smoke-test.log
+          if-no-files-found: ignore
+          retention-days: 14
+
   # The Paper plugin is one jar for Paper 1.21.1 through 26.x. `check` compiles it against
   # the 1.21.1 API and, on Java 25, against the 26.3 API, so both JDKs are needed.
   paper:
     name: paper (build)
     runs-on: ubuntu-latest
+    timeout-minutes: 30
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
 
-      - uses: actions/setup-java@v4
+      - uses: actions/setup-java@v6
         with:
           java-version: |
             21
@@ -94,11 +121,22 @@ jobs:
         run: chmod +x gradlew
 
       - name: Build
-        run: ./gradlew :paper:build --stacktrace
+        run: ./gradlew :paper:build --configure-on-demand --stacktrace
+
+      - name: Upload test reports
+        if: ${{ !cancelled() }}
+        uses: actions/upload-artifact@v7
+        with:
+          name: reports-paper
+          path: |
+            paper/build/reports/
+            paper/build/test-results/
+          if-no-files-found: ignore
+          retention-days: 14
 
       - name: Upload artifacts
         if: success()
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: build-artifacts-paper
           path: 'paper/build/libs/webgui-paper-*.jar'
@@ -110,14 +148,15 @@ jobs:
   paper-smoke:
     name: paper smoke (${{ matrix.version }})
     runs-on: ubuntu-latest
+    timeout-minutes: 25
     strategy:
       fail-fast: false
       matrix:
         version: ['1.21.1', '1.21.11', '26.3']
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
 
-      - uses: actions/setup-java@v4
+      - uses: actions/setup-java@v6
         with:
           java-version: |
             21
@@ -131,6 +170,18 @@ jobs:
       - name: Server smoke test
         run: bash .github/scripts/paper-smoke-test.sh ${{ matrix.version }} 600
 
+      - name: Upload server diagnostics
+        if: failure()
+        uses: actions/upload-artifact@v7
+        with:
+          name: diagnostics-paper-${{ matrix.version }}
+          path: |
+            paper/run/${{ matrix.version }}/logs/
+            paper/run/${{ matrix.version }}/crash-reports/
+            paper/run/${{ matrix.version }}/smoke-test.log
+          if-no-files-found: ignore
+          retention-days: 14
+
   # The headless protocol test (paper/e2e) against a real Paper 1.21.11. NOT part of
   # "Build all versions": it is timing-based (join handshakes, rate limits, a flood
   # test) and has not run on a hosted runner for long. Promote it into `needs` below
@@ -139,10 +190,11 @@ jobs:
   paper-e2e:
     name: paper e2e (1.21.11)
     runs-on: ubuntu-latest
+    timeout-minutes: 30
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
 
-      - uses: actions/setup-java@v4
+      - uses: actions/setup-java@v6
         with:
           java-version: |
             21
@@ -150,7 +202,7 @@ jobs:
           distribution: temurin
           cache: gradle
 
-      - uses: actions/setup-node@v4
+      - uses: actions/setup-node@v7
         with:
           node-version: '22'
           cache: npm
@@ -166,14 +218,46 @@ jobs:
       - name: Boot Paper and run the protocol test
         run: bash .github/scripts/paper-smoke-test.sh 1.21.11 900 --e2e
 
+      - name: Upload protocol test diagnostics
+        if: failure()
+        uses: actions/upload-artifact@v7
+        with:
+          name: diagnostics-paper-e2e
+          path: |
+            paper/run/1.21.11/logs/
+            paper/run/1.21.11/crash-reports/
+            paper/run/1.21.11/smoke-test.log
+          if-no-files-found: ignore
+          retention-days: 14
+
   # Single required status check for branch protection: green only if every
-  # matrix build and every Paper job succeeded.
+  # matrix build, Paper build and Paper smoke test succeeded. The experimental
+  # protocol test remains a separate job.
   build-all-versions:
     name: Build all versions
     needs: [build, paper, paper-smoke]
     if: always()
     runs-on: ubuntu-latest
+    timeout-minutes: 5
     steps:
+      - name: Write build summary
+        env:
+          MOD_RESULT: ${{ needs.build.result }}
+          PAPER_RESULT: ${{ needs.paper.result }}
+          SMOKE_RESULT: ${{ needs.paper-smoke.result }}
+        run: |
+          {
+            echo '## Build results'
+            echo '| Check | Result |'
+            echo '| --- | --- |'
+            echo "| Fabric / NeoForge (10 targets) | $MOD_RESULT |"
+            echo "| Paper build and unit tests | $PAPER_RESULT |"
+            echo "| Paper startup / shutdown (3 versions) | $SMOKE_RESULT |"
+            echo ''
+            echo 'Download JARs and test reports from the artifacts on this run.'
+            echo 'The experimental Paper protocol test is a separate job and does not gate this check.'
+          } >> "$GITHUB_STEP_SUMMARY"
+
       - name: Verify matrix result
         run: |
           failed=0

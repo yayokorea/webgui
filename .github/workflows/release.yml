@@ -3,6 +3,9 @@ name: Release
 on:
   push:
     branches: [main]
+    paths:
+      - gradle.properties
+      - '.github/workflows/release.yml'
   # Manual trigger of the same tag-gated release (e.g. if a push didn't fire).
   # Still publishes ONLY when the version's tag doesn't exist yet — no new tag,
   # no Modrinth publish — unless force_publish says otherwise.
@@ -25,18 +28,20 @@ concurrency:
 jobs:
   release:
     name: Build & Release
+    # This workflow publishes the upstream's Modrinth / CurseForge project.
+    # Fork builds are downloadable from the Build workflow artifacts instead.
+    if: github.repository == 'mc-webgui/webgui'
     runs-on: ubuntu-latest
+    timeout-minutes: 90
     permissions:
       contents: write
-    # Publishing needs repository secrets. A fork has none, and an upload without a token
-    # would fail the whole release; with these flags such a run builds, tests and tags
-    # but skips the uploads. Where the secrets exist nothing changes.
+    # Missing optional publishing credentials skip the corresponding platform uploads.
     env:
       HAS_MODRINTH_TOKEN: ${{ secrets.MODRINTH_TOKEN != '' }}
       HAS_CURSEFORGE_TOKEN: ${{ secrets.CURSEFORGE_TOKEN != '' }}
 
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
         with:
           fetch-depth: 0
 
@@ -93,7 +98,7 @@ jobs:
 
       - name: Set up Java
         if: steps.check.outputs.release == 'true'
-        uses: actions/setup-java@v4
+        uses: actions/setup-java@v6
         with:
           java-version: |
             21

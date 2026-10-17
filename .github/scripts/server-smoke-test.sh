@@ -23,7 +23,7 @@ printf 'eula=true\n' > "$RUN_DIR/eula.txt"
 printf 'online-mode=false\nlevel-type=minecraft\\:flat\nspawn-protection=0\nmax-players=1\nview-distance=4\n' \
     > "$RUN_DIR/server.properties"
 
-LOG="$(mktemp)"
+LOG="$RUN_DIR/smoke-test.log"
 cleanup() {
     kill -TERM "${GRADLE_PID:-}" 2>/dev/null || true
     pkill -TERM -f 'net.neoforged.devlaunch.Main' 2>/dev/null || true
