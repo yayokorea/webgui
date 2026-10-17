@@ -327,3 +327,11 @@ java {
         languageVersion = JavaLanguageVersion.of(javaVersion)
     }
 }
+
+// Preserve the upstream MIT notice in every binary and source archive.
+tasks.withType(Jar).configureEach {
+    from(rootProject.file('LICENSE')) {
+        into 'META-INF/licenses'
+        rename { 'webgui-LICENSE.txt' }
+    }
+}
