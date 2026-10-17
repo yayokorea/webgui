@@ -4,13 +4,13 @@
 
 > **Paper support in this fork** — This fork of [mc-webgui/webgui](https://github.com/mc-webgui/webgui) adds a [Paper server plugin](#installation-paper-server) for Paper 1.21.1–26.3. Players still need the WebGUI Fabric client mod; NeoForge clients are untested on Paper.
 >
-> Download this fork's client mod JARs and Paper plugin from the [Build workflow artifacts](https://github.com/yayokorea/webgui/actions/workflows/build.yml?query=branch%3Amain) (GitHub account required). Upstream [Modrinth downloads](https://modrinth.com/project/webgui) do not include this fork's Paper changes.
+> Download this fork's client mod JARs and Paper plugin from the [Build workflow artifacts](https://github.com/yayokorea/webgui-paper/actions/workflows/build.yml?query=branch%3Amain) (GitHub account required). Upstream [Modrinth downloads](https://modrinth.com/project/webgui) do not include this fork's Paper changes.
 
 **Embed any web page as a full-screen GUI or transparent HUD overlay inside Minecraft.**
 
 WebGUI is a Fabric & NeoForge mod (with a companion [Paper plugin](#installation-paper-server) for servers) that embeds a real Chromium browser (through its built-in java-cef integration) directly in the game client. Server operators can display any React, Vue, or plain HTML app to their players — as a HUD overlay that auto-opens on join, or as a custom main menu accessible with a keybind.
 
-[![Build](https://github.com/yayokorea/webgui/actions/workflows/build.yml/badge.svg?branch=main)](https://github.com/yayokorea/webgui/actions/workflows/build.yml)
+[![Build](https://github.com/yayokorea/webgui-paper/actions/workflows/build.yml/badge.svg?branch=main)](https://github.com/yayokorea/webgui-paper/actions/workflows/build.yml)
 [![Modrinth](https://img.shields.io/modrinth/dt/webgui?logo=modrinth&label=Modrinth&color=1bd96a)](https://modrinth.com/project/webgui)
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
 
@@ -52,7 +52,7 @@ Chromium (~150 MB) is downloaded automatically on first launch. No separate brow
 
 ## Installation
 
-1. Download this fork's client mod JAR from the [Build workflow artifacts](https://github.com/yayokorea/webgui/actions/workflows/build.yml?query=branch%3Amain) (GitHub account required), picking the right Minecraft version and loader. For upstream builds, use [Modrinth](https://modrinth.com/project/webgui); those do not include this fork's Paper changes.
+1. Download this fork's client mod JAR from the [Build workflow artifacts](https://github.com/yayokorea/webgui-paper/actions/workflows/build.yml?query=branch%3Amain) (GitHub account required), picking the right Minecraft version and loader. For upstream builds, use [Modrinth](https://modrinth.com/project/webgui); those do not include this fork's Paper changes.
 2. Place it in `.minecraft/mods/`.
    - **Fabric:** also add Fabric API. The browser library ships inside the WebGUI jar.
    - **NeoForge:** no separate browser mod is required.
@@ -91,12 +91,12 @@ Requires operator level 2. Supports `fabric-permissions-api` (LuckPerms, etc.).
 
 The Paper plugin lets a Paper (or Purpur) server do what a Fabric or NeoForge server does with the mod: open pages for players, show a HUD on join, host the server's own pages, bind pages to entities and replace the death screen. One jar covers Paper 1.21.1 through 26.3.
 
-1. Download `build-artifacts-paper` from a successful [Build run](https://github.com/yayokorea/webgui/actions/workflows/build.yml?query=branch%3Amain) and extract `webgui-paper-<version>.jar`, or build it yourself (`./gradlew :paper:build`, the jar is in `paper/build/libs/`). Downloading Actions artifacts requires a GitHub account.
+1. Download `build-artifacts-paper` from a successful [Build run](https://github.com/yayokorea/webgui-paper/actions/workflows/build.yml?query=branch%3Amain) and extract `webgui-paper-<version>.jar`, or build it yourself (`./gradlew :paper:build`, the jar is in `paper/build/libs/`). Downloading Actions artifacts requires a GitHub account.
 2. Put it in the server's `plugins/` folder and start the server.
 3. **Players need the WebGUI mod on the Fabric client** (see [Installation](#installation) above). The server does not send the mod to them.
 4. Settings are in `plugins/WebGUI/server.json`, created on first start. It has the same format as the mod's `config/webgui/server.json` (see [Quick setup](#quick-setup-server)); `/webgui reload` re-reads it. Pages the server hosts go in `plugins/WebGUI/web/`.
 
-Paper automatic release checks are disabled until Paper releases are published. Check the [Build workflow](https://github.com/yayokorea/webgui/actions/workflows/build.yml?query=branch%3Amain) for updated artifacts; `updateNotifyInChat` has no effect on Paper.
+Paper automatic release checks are disabled until Paper releases are published. Check the [Build workflow](https://github.com/yayokorea/webgui-paper/actions/workflows/build.yml?query=branch%3Amain) for updated artifacts; `updateNotifyInChat` has no effect on Paper.
 
 ### Commands and permissions
 
@@ -191,8 +191,8 @@ export function PlayerInfo() {
 Use JDK 25 to run Gradle and make both JDK 21 and JDK 25 available (see [CONTRIBUTING.md](CONTRIBUTING.md)).
 
 ```bash
-git clone https://github.com/yayokorea/webgui.git
-cd webgui
+git clone https://github.com/yayokorea/webgui-paper.git
+cd webgui-paper
 ./gradlew build
 ```
 

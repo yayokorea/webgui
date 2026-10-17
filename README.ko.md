@@ -4,13 +4,13 @@
 
 > **이 포크의 Paper 지원** — 이 포크는 [mc-webgui/webgui](https://github.com/mc-webgui/webgui)를 포크한 것으로, Paper 1.21.1–26.3용 [Paper 서버 플러그인](#installation-paper-server)을 추가합니다. 플레이어는 여전히 WebGUI Fabric 클라이언트 모드가 필요하며, NeoForge 클라이언트는 Paper에서 테스트되지 않았습니다.
 >
-> 이 포크의 클라이언트 모드 JAR와 Paper 플러그인은 [Build 워크플로 아티팩트](https://github.com/yayokorea/webgui/actions/workflows/build.yml?query=branch%3Amain)에서 내려받을 수 있습니다(GitHub 계정 필요). 업스트림의 [Modrinth 다운로드](https://modrinth.com/project/webgui)에는 이 포크의 Paper 변경 사항이 포함되어 있지 않습니다.
+> 이 포크의 클라이언트 모드 JAR와 Paper 플러그인은 [Build 워크플로 아티팩트](https://github.com/yayokorea/webgui-paper/actions/workflows/build.yml?query=branch%3Amain)에서 내려받을 수 있습니다(GitHub 계정 필요). 업스트림의 [Modrinth 다운로드](https://modrinth.com/project/webgui)에는 이 포크의 Paper 변경 사항이 포함되어 있지 않습니다.
 
 **어떤 웹 페이지든 Minecraft 안에서 전체 화면 GUI 또는 투명 HUD 오버레이로 임베드하세요.**
 
 WebGUI는 Fabric 및 NeoForge 모드(서버용 [Paper 플러그인](#installation-paper-server) 포함)로, 내장 java-cef 연동을 통해 실제 Chromium 브라우저를 게임 클라이언트에 직접 임베드합니다. 서버 운영자는 React, Vue 또는 일반 HTML 앱을 플레이어에게 보여줄 수 있습니다. 접속 시 자동으로 열리는 HUD 오버레이로도, 단축키로 여는 커스텀 메인 메뉴로도 사용할 수 있습니다.
 
-[![Build](https://github.com/yayokorea/webgui/actions/workflows/build.yml/badge.svg?branch=main)](https://github.com/yayokorea/webgui/actions/workflows/build.yml)
+[![Build](https://github.com/yayokorea/webgui-paper/actions/workflows/build.yml/badge.svg?branch=main)](https://github.com/yayokorea/webgui-paper/actions/workflows/build.yml)
 [![Modrinth](https://img.shields.io/modrinth/dt/webgui?logo=modrinth&label=Modrinth&color=1bd96a)](https://modrinth.com/project/webgui)
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
 
@@ -55,7 +55,7 @@ Chromium(약 150 MB)은 첫 실행 시 자동으로 다운로드됩니다. 별�
 <a id="installation"></a>
 ## 설치
 
-1. 이 포크의 클라이언트 모드 JAR를 [Build 워크플로 아티팩트](https://github.com/yayokorea/webgui/actions/workflows/build.yml?query=branch%3Amain)에서 내려받으세요(GitHub 계정 필요). 알맞은 Minecraft 버전과 로더를 선택해야 합니다. 업스트림 빌드는 [Modrinth](https://modrinth.com/project/webgui)를 이용하세요. 해당 빌드에는 이 포크의 Paper 변경 사항이 포함되어 있지 않습니다.
+1. 이 포크의 클라이언트 모드 JAR를 [Build 워크플로 아티팩트](https://github.com/yayokorea/webgui-paper/actions/workflows/build.yml?query=branch%3Amain)에서 내려받으세요(GitHub 계정 필요). 알맞은 Minecraft 버전과 로더를 선택해야 합니다. 업스트림 빌드는 [Modrinth](https://modrinth.com/project/webgui)를 이용하세요. 해당 빌드에는 이 포크의 Paper 변경 사항이 포함되어 있지 않습니다.
 2. `.minecraft/mods/`에 넣으세요.
    - **Fabric:** Fabric API도 함께 추가하세요. 브라우저 라이브러리는 WebGUI jar 안에 포함되어 있습니다.
    - **NeoForge:** 별도의 브라우저 모드는 필요하지 않습니다.
@@ -100,12 +100,12 @@ Chromium(약 150 MB)은 첫 실행 시 자동으로 다운로드됩니다. 별�
 
 Paper 플러그인을 사용하면 Paper(또는 Purpur) 서버에서도 Fabric 또는 NeoForge 서버가 모드로 하는 일을 할 수 있습니다. 플레이어에게 페이지 열기, 접속 시 HUD 표시, 서버 자체 페이지 호스팅, 엔티티에 페이지 연결, 사망 화면 교체가 가능합니다. jar 하나로 Paper 1.21.1부터 26.3까지 모두 지원합니다.
 
-1. 성공한 [Build 실행](https://github.com/yayokorea/webgui/actions/workflows/build.yml?query=branch%3Amain)에서 `build-artifacts-paper`를 내려받아 `webgui-paper-<version>.jar`를 추출하거나, 직접 빌드하세요(`./gradlew :paper:build`, jar는 `paper/build/libs/`에 생성됩니다). Actions 아티팩트를 내려받으려면 GitHub 계정이 필요합니다.
+1. 성공한 [Build 실행](https://github.com/yayokorea/webgui-paper/actions/workflows/build.yml?query=branch%3Amain)에서 `build-artifacts-paper`를 내려받아 `webgui-paper-<version>.jar`를 추출하거나, 직접 빌드하세요(`./gradlew :paper:build`, jar는 `paper/build/libs/`에 생성됩니다). Actions 아티팩트를 내려받으려면 GitHub 계정이 필요합니다.
 2. 서버의 `plugins/` 폴더에 넣고 서버를 시작하세요.
 3. **플레이어는 Fabric 클라이언트에 WebGUI 모드가 필요합니다**(위의 [설치](#installation) 참고). 서버가 모드를 플레이어에게 보내주지는 않습니다.
 4. 설정은 첫 시작 시 생성되는 `plugins/WebGUI/server.json`에 있습니다. 모드의 `config/webgui/server.json`과 형식이 같으며([빠른 설정](#quick-setup-server) 참고), `/webgui reload`로 다시 읽습니다. 서버가 호스팅하는 페이지는 `plugins/WebGUI/web/`에 넣으세요.
 
-Paper 릴리스가 게시되기 전까지 Paper 자동 릴리스 확인은 비활성화되어 있습니다. 업데이트된 아티팩트는 [Build 워크플로](https://github.com/yayokorea/webgui/actions/workflows/build.yml?query=branch%3Amain)에서 확인하세요. `updateNotifyInChat`은 Paper에서 아무 효과가 없습니다.
+Paper 릴리스가 게시되기 전까지 Paper 자동 릴리스 확인은 비활성화되어 있습니다. 업데이트된 아티팩트는 [Build 워크플로](https://github.com/yayokorea/webgui-paper/actions/workflows/build.yml?query=branch%3Amain)에서 확인하세요. `updateNotifyInChat`은 Paper에서 아무 효과가 없습니다.
 
 <a id="commands-and-permissions"></a>
 ### 명령어와 권한
@@ -211,8 +211,8 @@ export function PlayerInfo() {
 Gradle은 JDK 25로 실행하고, JDK 21과 JDK 25를 모두 사용할 수 있도록 준비하세요([CONTRIBUTING.md](CONTRIBUTING.md) 참고).
 
 ```bash
-git clone https://github.com/yayokorea/webgui.git
-cd webgui
+git clone https://github.com/yayokorea/webgui-paper.git
+cd webgui-paper
 ./gradlew build
 ```
 
