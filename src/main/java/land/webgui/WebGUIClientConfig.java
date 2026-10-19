@@ -12,6 +12,10 @@ import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.util.ArrayList;
+import java.util.LinkedHashMap;
+import java.util.List;
+import java.util.Map;
 
 /**
  * Settings that belong to the player, not the server.
@@ -45,6 +49,13 @@ public final class WebGUIClientConfig {
 
     /** Whether a page may start audio or video without the player touching it first. */
     private boolean allowPageAutoplay = false;
+
+    /**
+     * The player's own keys for a server's key menus, by menu id. An empty list unbinds the
+     * menu. Not tied to a server: ids are the server's to choose, and one that two servers
+     * share is most likely the same thing.
+     */
+    private Map<String, List<String>> keyMenuKeys = new LinkedHashMap<>();
 
     private static WebGUIClientConfig instance = new WebGUIClientConfig();
 
@@ -136,6 +147,29 @@ public final class WebGUIClientConfig {
         }
         instance.allowPageAutoplay = value;
         save();
+    }
+
+    /** The keys the player chose for a menu, or null if they never did. */
+    public static List<String> keyOverride(String id) {
+        Map<String, List<String>> map = instance.keyMenuKeys;
+        List<String> keys = map == null ? null : map.get(id);
+        return keys == null ? null : List.copyOf(keys);
+    }
+
+    /** Files the player's choice; an empty list unbinds the menu. */
+    public static void setKeyOverride(String id, List<String> keys) {
+        if (instance.keyMenuKeys == null) {
+            instance.keyMenuKeys = new LinkedHashMap<>();
+        }
+        instance.keyMenuKeys.put(id, new ArrayList<>(keys));
+        save();
+    }
+
+    /** Forgets the player's choice, so the server's keys apply again. */
+    public static void clearKeyOverride(String id) {
+        if (instance.keyMenuKeys != null && instance.keyMenuKeys.remove(id) != null) {
+            save();
+        }
     }
 
     public static void setBrowserFrameRate(int value) {

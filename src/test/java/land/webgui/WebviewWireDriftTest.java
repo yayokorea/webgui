@@ -8,6 +8,7 @@ import land.webgui.common.WebviewWire.AssetChunk;
 import land.webgui.common.WebviewWire.AssetManifest;
 import land.webgui.common.WebviewWire.AssetRequest;
 import land.webgui.common.WebviewWire.DeathScreen;
+import land.webgui.common.WebviewWire.KeyMenuList;
 import land.webgui.common.WebviewWire.EmitToPage;
 import land.webgui.common.WebviewWire.EntityContext;
 import land.webgui.common.WebviewWire.Hello;
@@ -126,6 +127,12 @@ class WebviewWireDriftTest {
                         new DeathScreen("u".repeat(WebviewProtocol.MAX_URL_LENGTH), "d".repeat(WebviewProtocol.MAX_EVENT_DATA_LENGTH)),
                         new DeathScreen("日".repeat(WebviewProtocol.MAX_URL_LENGTH), "日".repeat(WebviewProtocol.MAX_EVENT_DATA_LENGTH))),
                 WebviewWire::encodeDeathScreen, WebviewWire::decodeDeathScreen, gameDeathScreen());
+    }
+
+    @Test
+    void keyMenus() {
+        agree(strings(WebviewProtocol.MAX_KEY_MENUS_LENGTH).stream().map(KeyMenuList::new).toList(),
+                WebviewWire::encodeKeyMenus, WebviewWire::decodeKeyMenus, gameKeyMenus());
     }
 
     @Test
@@ -258,6 +265,12 @@ class WebviewWireDriftTest {
                 p -> new DeathScreen(p.url(), p.infoJson()));
     }
 
+    private static Game<KeyMenuList> gameKeyMenus() {
+        return game(WebviewPayloads.WebviewKeyMenusS2CPayload.class,
+                w -> new WebviewPayloads.WebviewKeyMenusS2CPayload(w.json()),
+                p -> new KeyMenuList(p.json()));
+    }
+
     private static Game<Hello> gameHello() {
         return game(WebviewPayloads.WebviewHelloS2CPayload.class,
                 w -> new WebviewPayloads.WebviewHelloS2CPayload(w.protocolVersion(), w.modVersion()),
@@ -333,6 +346,10 @@ class WebviewWireDriftTest {
     private static Game<DeathScreen> gameDeathScreen() {
         return pair(WebviewProtocol.MAX_URL_LENGTH, WebviewProtocol.MAX_EVENT_DATA_LENGTH,
                 DeathScreen::url, DeathScreen::infoJson, DeathScreen::new);
+    }
+
+    private static Game<KeyMenuList> gameKeyMenus() {
+        return single(WebviewProtocol.MAX_KEY_MENUS_LENGTH, KeyMenuList::json, KeyMenuList::new);
     }
 
     private static Game<Hello> gameHello() {

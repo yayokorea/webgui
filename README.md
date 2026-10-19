@@ -27,6 +27,7 @@ WebGUI is a Fabric & NeoForge mod (with a companion [Paper plugin](#installation
 - **HUD overlay** — transparent overlay on top of the game; toggle interactive mode with `` ` ``
 - **Auto HUD on join** — automatically shows a HUD overlay when a player connects
 - **Custom main menu** — players press `F6` to open your web page
+- **Key combinations** — open a different page for each key combination you define (`Shift+F`, `Ctrl+G`, ...), with no limit on how many; players can rebind each one
 - **Live client data** — the mod pushes `window.webgui.client` (position, look direction, health, food, XP level, gamemode, dimension, server info) to the page at 20 TPS
 - **Signed tokens** — every URL the mod opens carries an HMAC-signed token so your backend can verify the player's identity
 - **Mod API** — other mods (Fabric or NeoForge) can open WebGUI overlays programmatically via `WebviewApi`
@@ -78,6 +79,33 @@ Create or edit `config/webgui/server.json`:
 ```
 
 Restart the server and join to test.
+
+### Key combinations
+
+`keyMenus` binds key combinations to pages. The list is yours to make as long as you like; it is sent to each player on join and on `/webgui reload`:
+
+```json
+"keyMenus": [
+  { "id": "shop",   "keys": ["shift", "F"], "url": "https://example.com/shop" },
+  { "id": "quests", "keys": ["ctrl", "G"],  "url": "https://example.com/quests" },
+  { "id": "map",    "keys": ["alt", "1"],   "url": "webgui://map.html" }
+]
+```
+
+- `id` — letters, digits, `_`, `.` and `-` (up to 64). It is what a player's own rebinding is filed under, so keep it stable.
+- `keys` — the keys to hold together, in any order. A list of names, or one string: `"shift+F"`. Names are not case-sensitive: letters `a`–`z`, digits `0`–`9`, `f1`–`f24`, `shift`, `ctrl`, `alt` (either side; `lshift`, `rshift`, ... for one side), `space`, `tab`, `enter`, `escape`, `backspace`, `delete`, `insert`, `home`, `end`, `pageup`, `pagedown`, `up`, `down`, `left`, `right`, `grave`, `minus`, `equal`, `comma`, `period`, `slash`, `backslash`, `semicolon`, `apostrophe`, `leftbracket`, `rightbracket`, `capslock` and the keypad (`kp0`–`kp9`, `kpadd`, `kpmultiply`, `kpenter`). Up to 6 keys.
+- `url` — the page to open, like `mainMenuUrl` (no player token is appended).
+
+How a combination behaves:
+
+- It fires **once**, when the last key of it goes down. Holding the keys does not repeat it, and keys held for other reasons (walking) do not stop it. If several combinations match one press — `F` and `Shift+F` — the one with the most keys wins.
+- It is ignored while chat or any other screen is open.
+- The press that completes a combination is **consumed**, so `Shift+F` does not also swap hands. The keys pressed before it are not: `Shift` still sneaks while held. Pick combinations around that, and expect conflicts with other mods that read the keyboard the same way.
+- An entry with an unknown key, a repeated or invalid `id`, or no `url` is skipped with a line in the log; the rest still work.
+- `F6` and `mainMenuUrl` keep working next to this. Do not give a combination the same keys as another mod's key binding unless you mean to take them.
+- Players can change the keys of each entry (or unbind it) under **Mod settings → WebGUI → Key menus...** while connected to the server; the choice is kept in their `config/webgui/client.json` and survives the server changing its defaults.
+
+Server and client must run the same WebGUI protocol: this feature raised it to **2**, so a client or server older than this change drops the other's pages and says so in chat on join. Update both together.
 
 ---
 

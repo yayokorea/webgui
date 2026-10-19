@@ -2,7 +2,10 @@ package land.webgui.server;
 
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
+import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
+import land.webgui.common.KeyMenu;
+import land.webgui.common.KeyMenus;
 import land.webgui.common.WebGUILog;
 
 import com.google.gson.JsonArray;
@@ -78,6 +81,12 @@ public final class WebviewServerConfig {
 
     private String mainMenuUrl = "webgui://index.html";
 
+    // Key combinations that open pages: [{"id": "shop", "keys": ["shift", "F"], "url": "..."}].
+    // Kept as the raw JSON so one bad entry is skipped (see KeyMenus.parse) instead of
+    // failing the whole file. Absent or empty = none; F6 and mainMenuUrl keep working.
+    private JsonElement keyMenus;
+    private transient List<KeyMenu> keyMenusParsed = Collections.emptyList();
+
     // Page shown instead of the vanilla death screen. Empty = keep the vanilla screen.
     private String deathScreenUrl = "";
 
@@ -125,6 +134,17 @@ public final class WebviewServerConfig {
             o.addProperty("autoHudUrl", "webgui://hud.html");
 
             o.addProperty("mainMenuUrl", "webgui://index.html");
+
+            JsonArray keyMenus = new JsonArray();
+            JsonObject shop = new JsonObject();
+            shop.addProperty("id", "shop");
+            JsonArray shopKeys = new JsonArray();
+            shopKeys.add("shift");
+            shopKeys.add("F");
+            shop.add("keys", shopKeys);
+            shop.addProperty("url", "webgui://index.html");
+            keyMenus.add(shop);
+            o.add("keyMenus", keyMenus);
 
             o.addProperty("deathScreenUrl", "");
 
@@ -191,6 +211,7 @@ public final class WebviewServerConfig {
         } else {
             mainMenuUrl = mainMenuUrl.trim();
         }
+        keyMenusParsed = KeyMenus.parse(keyMenus);
         List<String> cleaned = new ArrayList<>();
         if (trustedCommandOrigins != null) {
             for (String o : trustedCommandOrigins) {
@@ -248,6 +269,12 @@ public final class WebviewServerConfig {
     public static String mainMenuUrl() {
         String u = instance.mainMenuUrl;
         return u == null ? "" : u.trim();
+    }
+
+    /** The key combinations that open pages, already checked. Never null; empty when none are configured. */
+    public static List<KeyMenu> keyMenus() {
+        List<KeyMenu> menus = instance.keyMenusParsed;
+        return menus == null ? Collections.emptyList() : menus;
     }
 
     /**

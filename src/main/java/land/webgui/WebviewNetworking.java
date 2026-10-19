@@ -1,6 +1,7 @@
 package land.webgui;
 
 import land.webgui.common.ClientKind;
+import land.webgui.common.KeyMenus;
 import land.webgui.common.WebviewProtocol;
 import land.webgui.common.WireText;
 import land.webgui.server.WebviewServerConfig;
@@ -49,6 +50,7 @@ public final class WebviewNetworking {
         toClient.register(WebviewPayloads.WebviewEntityContextS2CPayload.TYPE, WebviewPayloads.WebviewEntityContextS2CPayload.STREAM_CODEC);
         toClient.register(WebviewPayloads.WebviewTrustedOriginsS2CPayload.TYPE, WebviewPayloads.WebviewTrustedOriginsS2CPayload.STREAM_CODEC);
         toClient.register(WebviewPayloads.WebviewDeathS2CPayload.TYPE, WebviewPayloads.WebviewDeathS2CPayload.STREAM_CODEC);
+        toClient.register(WebviewPayloads.WebviewKeyMenusS2CPayload.TYPE, WebviewPayloads.WebviewKeyMenusS2CPayload.STREAM_CODEC);
         toClient.register(WebviewPayloads.WebviewHelloS2CPayload.TYPE, WebviewPayloads.WebviewHelloS2CPayload.STREAM_CODEC);
         toClient.register(WebviewPayloads.WebviewAssetManifestS2CPayload.TYPE, WebviewPayloads.WebviewAssetManifestS2CPayload.STREAM_CODEC);
         toClient.register(WebviewPayloads.WebviewAssetChunkS2CPayload.TYPE, WebviewPayloads.WebviewAssetChunkS2CPayload.STREAM_CODEC);
@@ -115,6 +117,8 @@ public final class WebviewNetworking {
                         WebviewPayloads.WebviewTrustedOriginsS2CPayload.STREAM_CODEC, (payload, ctx) -> {});
                 reg.playToClient(WebviewPayloads.WebviewDeathS2CPayload.TYPE,
                         WebviewPayloads.WebviewDeathS2CPayload.STREAM_CODEC, (payload, ctx) -> {});
+                reg.playToClient(WebviewPayloads.WebviewKeyMenusS2CPayload.TYPE,
+                        WebviewPayloads.WebviewKeyMenusS2CPayload.STREAM_CODEC, (payload, ctx) -> {});
                 reg.playToClient(WebviewPayloads.WebviewHelloS2CPayload.TYPE,
                         WebviewPayloads.WebviewHelloS2CPayload.STREAM_CODEC, (payload, ctx) -> {});
                 reg.playToClient(WebviewPayloads.WebviewAssetManifestS2CPayload.TYPE,
@@ -280,6 +284,27 @@ public final class WebviewNetworking {
     }
 
     /**
+     * Sends the server's key combinations, or an empty list. Skipped for a client that has no
+     * such channel (a WebGUI from before protocol 2), which could not use it.
+     */
+    public static void sendKeyMenus(ServerPlayer player) {
+        String json = KeyMenus.toWire(WebviewServerConfig.keyMenus(), WebviewProtocol.MAX_KEY_MENUS_LENGTH);
+        //? if >=1.20.5 {
+        if (!ServerPlayNetworking.canSend(player, WebviewPayloads.WebviewKeyMenusS2CPayload.TYPE)) {
+            return;
+        }
+        ServerPlayNetworking.send(player, new WebviewPayloads.WebviewKeyMenusS2CPayload(json));
+        //? } else {
+        /*if (!ServerPlayNetworking.canSend(player, WebviewPayloads.KEY_MENUS_CHANNEL)) {
+            return;
+        }
+        FriendlyByteBuf buf = PacketByteBufs.create();
+        buf.writeUtf(json, WebviewPayloads.MAX_KEY_MENUS_LENGTH);
+        ServerPlayNetworking.send(player, WebviewPayloads.KEY_MENUS_CHANNEL, buf);*/
+        //? }
+    }
+
+    /**
      * Tells the client which WebGUI the server runs. Silently skipped for a client that
      * has no such channel — that case is reported to the player as text instead.
      */
@@ -396,6 +421,8 @@ public final class WebviewNetworking {
         sendDeathScreen(player, WebviewServerConfig.deathScreenUrl(), "");
         // Empty included, so clearing mainMenuUrl reaches a player who was given one.
         sendMainMenuUrl(player, WebviewServerConfig.mainMenuUrl());
+        // Likewise an empty list, so removing the last key menu reaches a player who had it.
+        sendKeyMenus(player);
     }
 
     public static void sendTrustedOrigins(ServerPlayer player, String origins) {
@@ -484,6 +511,8 @@ public final class WebviewNetworking {
         sendDeathScreen(player, WebviewServerConfig.deathScreenUrl(), "");
         // Empty included, so clearing mainMenuUrl reaches a player who was given one.
         sendMainMenuUrl(player, WebviewServerConfig.mainMenuUrl());
+        // Likewise an empty list, so removing the last key menu reaches a player who had it.
+        sendKeyMenus(player);
     }
 
     public static void sendTrustedOrigins(ServerPlayer player, String origins) {
@@ -518,6 +547,16 @@ public final class WebviewNetworking {
             PacketDistributor.sendToPlayer(player,
                     new WebviewPayloads.WebviewAssetChunkS2CPayload(path, i, chunks.size(), chunks.get(i)));
         }
+    }
+
+    // Sends the server's key combinations, or an empty list. Skipped for a client that has no
+    // such channel (a WebGUI from before protocol 2), which could not use it.
+    public static void sendKeyMenus(ServerPlayer player) {
+        if (!player.connection.hasChannel(WebviewPayloads.WebviewKeyMenusS2CPayload.TYPE)) {
+            return;
+        }
+        String json = KeyMenus.toWire(WebviewServerConfig.keyMenus(), WebviewProtocol.MAX_KEY_MENUS_LENGTH);
+        PacketDistributor.sendToPlayer(player, new WebviewPayloads.WebviewKeyMenusS2CPayload(json));
     }
 
     // Tells the client which WebGUI the server runs. Silently skipped for a client that

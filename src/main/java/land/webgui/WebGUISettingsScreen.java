@@ -78,6 +78,11 @@ public class WebGUISettingsScreen extends Screen {
             this.devToolsButton.setMessage(devToolsLabel());
         });
 
+        this.addRenderableWidget(Button.builder(Component.translatable("screen.webgui.settings.keymenus"),
+                        b -> Mc.openScreen(this.minecraft, new WebGUIKeyMenusScreen(this)))
+                .tooltip(Tooltip.create(Component.translatable("screen.webgui.settings.keymenus.tip")))
+                .bounds(left, this.height - 54, BUTTON_WIDTH, 20).build());
+
         this.addRenderableWidget(Button.builder(Component.translatable("gui.done"), b -> this.onClose())
                 .bounds(left, this.height - 32, BUTTON_WIDTH, 20).build());
     }

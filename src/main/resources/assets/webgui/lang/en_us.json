@@ -22,5 +22,15 @@
   "screen.webgui.settings.downloads.tip": "Off: a file a page offers is saved into webgui-downloads/ beside the game and you are told the name. On: the system save dialog opens for each one. Takes effect after a restart.",
   "screen.webgui.settings.autoplay": "Let pages play sound on their own",
   "screen.webgui.settings.autoplay.tip": "Off: video and audio on a page wait until you click it, the way a browser treats a tab you did not open. On: a page may start playing by itself. Takes effect after a restart.",
+  "screen.webgui.settings.keymenus": "Key menus...",
+  "screen.webgui.settings.keymenus.tip": "Choose your own keys for the pages this server opens with a key combination. Only lists something while you are on a server that has any.",
+  "screen.webgui.keymenus.title": "Key menus",
+  "screen.webgui.keymenus.hint": "Click a menu, then press its new keys together and let go.",
+  "screen.webgui.keymenus.hint.capture": "Press the keys together, then let go. Esc cancels.",
+  "screen.webgui.keymenus.hint.none": "This server has no key menus.",
+  "screen.webgui.keymenus.press": "> press keys <",
+  "screen.webgui.keymenus.unbound": "not set",
+  "screen.webgui.keymenus.unbind": "Unbind",
+  "screen.webgui.keymenus.reset": "Reset",
   "screen.webgui.settings.devtools.tip": "Writes browser errors, failed requests and console output to the game log, and opens the inspector on F12. Off by default: it makes the log noisy. Takes effect after a restart."
 }

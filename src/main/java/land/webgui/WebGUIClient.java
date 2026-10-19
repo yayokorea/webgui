@@ -1,5 +1,6 @@
 package land.webgui;
 
+import land.webgui.common.KeyMenus;
 import land.webgui.compat.Mc;
 import land.webgui.browser.BrowserBoot;
 import land.webgui.browser.WebBrowser;
@@ -72,6 +73,10 @@ public final class WebGUIClient
             context.client().execute(() -> onDeathPayload(payload.url(), payload.infoJson()));
         });
 
+        ClientPlayNetworking.registerGlobalReceiver(WebviewPayloads.WebviewKeyMenusS2CPayload.TYPE, (payload, context) -> {
+            context.client().execute(() -> WebGUIKeyMenus.set(KeyMenus.fromWire(payload.json())));
+        });
+
         ClientPlayNetworking.registerGlobalReceiver(WebviewPayloads.WebviewHelloS2CPayload.TYPE, (payload, context) -> {
             context.client().execute(() -> WebGUIHandshake.onHello(payload.protocolVersion(), payload.modVersion()));
         });
@@ -118,6 +123,11 @@ public final class WebGUIClient
             client.execute(() -> onDeathPayload(url, info));
         });
 
+        ClientPlayNetworking.registerGlobalReceiver(WebviewPayloads.KEY_MENUS_CHANNEL, (client, handler, buf, responseSender) -> {
+            String json = buf.readUtf(WebviewPayloads.MAX_KEY_MENUS_LENGTH);
+            client.execute(() -> WebGUIKeyMenus.set(KeyMenus.fromWire(json)));
+        });
+
         ClientPlayNetworking.registerGlobalReceiver(WebviewPayloads.HELLO_CHANNEL, (client, handler, buf, responseSender) -> {
             int protocol   = buf.readVarInt();
             String version = buf.readUtf(WebviewPayloads.MAX_VERSION_LENGTH);
@@ -162,6 +172,7 @@ public final class WebGUIClient
         WebHudOverlay.reset();
         WebSession.dispose();
         WebGUIMainMenuUrl.setUrl("");
+        WebGUIKeyMenus.clear();
         WebGUITrustedOrigins.clear();
         WebGUIDeathScreen.clear();
         WebGUIHandshake.clear();
@@ -249,6 +260,7 @@ public final class WebGUIClient
         WebHudOverlay.reset();
         WebSession.dispose();
         WebGUIMainMenuUrl.setUrl("");
+        WebGUIKeyMenus.clear();
         WebGUITrustedOrigins.clear();
         WebGUIDeathScreen.clear();
         WebGUIHandshake.clear();
@@ -288,6 +300,8 @@ public final class WebGUIClient
                 (payload, ctx) -> ctx.enqueueWork(() -> WebGUITrustedOrigins.set(payload.origins())));
         reg.playToClient(WebviewPayloads.WebviewDeathS2CPayload.TYPE, WebviewPayloads.WebviewDeathS2CPayload.STREAM_CODEC,
                 (payload, ctx) -> ctx.enqueueWork(() -> onDeathPayload(payload.url(), payload.infoJson())));
+        reg.playToClient(WebviewPayloads.WebviewKeyMenusS2CPayload.TYPE, WebviewPayloads.WebviewKeyMenusS2CPayload.STREAM_CODEC,
+                (payload, ctx) -> ctx.enqueueWork(() -> WebGUIKeyMenus.set(KeyMenus.fromWire(payload.json()))));
         reg.playToClient(WebviewPayloads.WebviewHelloS2CPayload.TYPE, WebviewPayloads.WebviewHelloS2CPayload.STREAM_CODEC,
                 (payload, ctx) -> ctx.enqueueWork(() -> WebGUIHandshake.onHello(payload.protocolVersion(), payload.modVersion())));
         reg.playToClient(WebviewPayloads.WebviewAssetManifestS2CPayload.TYPE, WebviewPayloads.WebviewAssetManifestS2CPayload.STREAM_CODEC,

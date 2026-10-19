@@ -144,6 +144,11 @@ public final class WebGUIKeys {
         if (Mc.screen(client) instanceof WebViewScreen) {
             return;
         }
+        openPage(client, WebGUIMainMenuUrl.getUrl());
+    }
+
+    /** Opens a page in a screen, or says why it cannot be opened yet. */
+    static void openPage(Minecraft client, String url) {
         if (!WebBrowser.ready()) {
             if (client.player != null) {
                 //? if >=26 {
@@ -154,6 +159,6 @@ public final class WebGUIKeys {
             }
             return;
         }
-        Mc.openScreen(client, new WebViewScreen(WebGUIMainMenuUrl.getUrl()));
+        Mc.openScreen(client, new WebViewScreen(url));
     }
 }

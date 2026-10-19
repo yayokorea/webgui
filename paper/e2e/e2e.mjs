@@ -41,7 +41,7 @@ const logPath = path.join(runDir, 'logs', 'latest.log');
 // --- the protocol, as the plugin speaks it (WebviewProtocol / WebviewWire) ---
 
 const S2C = ['open_web', 'set_main_menu', 'emit_to_page', 'entity_context', 'trusted_origins',
-  'death_screen', 'hello', 'asset_manifest', 'asset_chunk'].map((p) => `webgui:${p}`);
+  'death_screen', 'key_menus', 'hello', 'asset_manifest', 'asset_chunk'].map((p) => `webgui:${p}`);
 
 function readVarInt(buf, pos) {
   let result = 0;
@@ -71,6 +71,7 @@ const decode = {
   asset_manifest(buf) { let [r, o] = readString(buf, 0); let [m] = readString(buf, o); return { revision: r, manifest: m }; },
   death_screen(buf) { let [u, o] = readString(buf, 0); let [i] = readString(buf, o); return { url: u, info: i }; },
   set_main_menu(buf) { return { url: readString(buf, 0)[0] }; },
+  key_menus(buf) { return { json: readString(buf, 0)[0] }; },
   entity_context(buf) { return { json: readString(buf, 0)[0] }; },
   open_web(buf) { let [p, o] = readVarInt(buf, 0); let [m, o2] = readVarInt(buf, o); let [u] = readString(buf, o2); return { protocol: p, mode: m, url: u }; },
   asset_chunk(buf) {
@@ -282,13 +283,18 @@ await scenario('A Fabric-like client: handshake, snapshot, assets', async () => 
     JSON.stringify(b.serverRegister));
 
   const hello = b.got('hello')[0];
-  check('hello carries protocol 1', hello.protocol === 1, JSON.stringify({ ...hello, raw: undefined }));
+  check('hello carries protocol 2', hello.protocol === 2, JSON.stringify({ ...hello, raw: undefined }));
   check('hello carries the plugin version', /^\d+\.\d+\.\d+/.test(hello.modVersion), hello.modVersion);
 
   const order = b.received.map((m) => m.channel.slice(7));
   check('hello comes first, then the snapshot in mod order',
     JSON.stringify(order.slice(0, 5)) === JSON.stringify(['hello', 'trusted_origins', 'asset_manifest', 'death_screen', 'set_main_menu']),
     order.join(' '));
+
+  // No keyMenus in the test config: the snapshot still carries the (empty) list, so a
+  // reload that removes the last menu clears it on the client.
+  await b.waitFor(() => b.got('key_menus').length > 0, 3000, 'webgui:key_menus');
+  check('the snapshot carries an empty key_menus list', b.got('key_menus')[0].json === '[]', b.got('key_menus')[0].json);
 
   const ready = readLog().slice(joinLogAt).match(/client ready: e2e_fabric \(CURRENT\)/g) ?? [];
   check('WebGUIClientReadyEvent fires once for the WebGUI client', ready.length === 1, 'needs the debug log; see README');
@@ -325,8 +331,8 @@ await scenario('A Fabric-like client: handshake, snapshot, assets', async () => 
   const gui = b.got('open_web')[0];
   const ctxIdx = b.received.findIndex((m) => m.channel === 'webgui:entity_context');
   const openIdx = b.received.findIndex((m) => m.channel === 'webgui:open_web');
-  check('gui: protocol 1, mode 0, token appended',
-    gui.protocol === 1 && gui.mode === 0 && gui.url.startsWith('https://example.com/gui?webgui_token='), gui.url.slice(0, 60));
+  check('gui: protocol 2, mode 0, token appended',
+    gui.protocol === 2 && gui.mode === 0 && gui.url.startsWith('https://example.com/gui?webgui_token='), gui.url.slice(0, 60));
   check('gui: entity context is cleared first', ctxIdx >= 0 && ctxIdx < openIdx && b.got('entity_context')[0].json === 'null');
 
   sendConsole(`webgui hud ${b.name} https://example.com/hud`);

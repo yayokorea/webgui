@@ -22,5 +22,15 @@
   "screen.webgui.settings.downloads.tip": "Выключено: файл со страницы попадает в webgui-downloads рядом с игрой, имя сообщается в чат. Включено: на каждый файл открывается системное окно сохранения. Применится после перезапуска.",
   "screen.webgui.settings.autoplay": "Разрешить страницам звук без спроса",
   "screen.webgui.settings.autoplay.tip": "Выключено: видео и звук на странице ждут вашего клика, как браузер поступает с вкладкой, которую вы не открывали. Включено: страница может заиграть сама. Применится после перезапуска.",
+  "screen.webgui.settings.keymenus": "Клавиши меню...",
+  "screen.webgui.settings.keymenus.tip": "Выберите свои клавиши для страниц, которые сервер открывает по сочетанию клавиш. Список непуст, только пока вы на сервере, где такие есть.",
+  "screen.webgui.keymenus.title": "Клавиши меню",
+  "screen.webgui.keymenus.hint": "Нажмите на меню, затем зажмите новые клавиши вместе и отпустите.",
+  "screen.webgui.keymenus.hint.capture": "Зажмите клавиши вместе и отпустите. Esc — отмена.",
+  "screen.webgui.keymenus.hint.none": "На этом сервере нет меню по клавишам.",
+  "screen.webgui.keymenus.press": "> нажмите клавиши <",
+  "screen.webgui.keymenus.unbound": "не задано",
+  "screen.webgui.keymenus.unbind": "Снять",
+  "screen.webgui.keymenus.reset": "Сброс",
   "screen.webgui.settings.devtools.tip": "Пишет в игровой лог ошибки браузера, неудавшиеся запросы и вывод консоли, а также открывает инспектор по F12. По умолчанию выключено: лог становится шумным. Применится после перезапуска."
 }

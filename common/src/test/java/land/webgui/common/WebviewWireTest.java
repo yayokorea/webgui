@@ -4,6 +4,7 @@ import land.webgui.common.WebviewWire.AssetChunk;
 import land.webgui.common.WebviewWire.AssetManifest;
 import land.webgui.common.WebviewWire.AssetRequest;
 import land.webgui.common.WebviewWire.DeathScreen;
+import land.webgui.common.WebviewWire.KeyMenuList;
 import land.webgui.common.WebviewWire.EmitToPage;
 import land.webgui.common.WebviewWire.EntityContext;
 import land.webgui.common.WebviewWire.Hello;
@@ -23,6 +24,7 @@ import static land.webgui.common.WebviewProtocol.ASSET_CHUNK_BYTES;
 import static land.webgui.common.WebviewProtocol.MAX_ASSET_PATH_LENGTH;
 import static land.webgui.common.WebviewProtocol.MAX_EVENT_DATA_LENGTH;
 import static land.webgui.common.WebviewProtocol.MAX_EVENT_NAME_LENGTH;
+import static land.webgui.common.WebviewProtocol.MAX_KEY_MENUS_LENGTH;
 import static land.webgui.common.WebviewProtocol.MAX_MANIFEST_LENGTH;
 import static land.webgui.common.WebviewProtocol.MAX_URL_LENGTH;
 import static land.webgui.common.WebviewProtocol.MAX_VERSION_LENGTH;
@@ -240,6 +242,14 @@ class WebviewWireTest {
     }
 
     @Test
+    void keyMenusRoundTrips() {
+        KeyMenuList p = new KeyMenuList("[{\"id\":\"shop\",\"keys\":[\"shift\",\"f\"],\"url\":\"https://example.org/shop\"}]");
+        assertEquals(p, WebviewWire.decodeKeyMenus(WebviewWire.encodeKeyMenus(p)));
+        KeyMenuList none = new KeyMenuList("[]");
+        assertEquals(none, WebviewWire.decodeKeyMenus(WebviewWire.encodeKeyMenus(none)));
+    }
+
+    @Test
     void helloRoundTrips() {
         Hello p = new Hello(WebviewProtocol.PROTOCOL_VERSION, "1.8.1+mc1.21.11");
         assertEquals(p, WebviewWire.decodeHello(WebviewWire.encodeHello(p)));
@@ -311,6 +321,8 @@ class WebviewWireTest {
                         s -> WebviewWire.encodeDeathScreen(new DeathScreen(s, "")), WebviewWire::decodeDeathScreen),
                 new StringField("deathScreen.info", MAX_EVENT_DATA_LENGTH,
                         s -> WebviewWire.encodeDeathScreen(new DeathScreen("", s)), WebviewWire::decodeDeathScreen),
+                new StringField("keyMenus.json", MAX_KEY_MENUS_LENGTH,
+                        s -> WebviewWire.encodeKeyMenus(new KeyMenuList(s)), WebviewWire::decodeKeyMenus),
                 new StringField("hello.version", MAX_VERSION_LENGTH,
                         s -> WebviewWire.encodeHello(new Hello(1, s)), WebviewWire::decodeHello),
                 new StringField("assetManifest.revision", MAX_VERSION_LENGTH,
@@ -400,6 +412,7 @@ class WebviewWireTest {
                 WebviewWire.encodeEntityContext(new EntityContext("{}")),
                 WebviewWire.encodeTrustedOrigins(new TrustedOrigins("https://example.org")),
                 WebviewWire.encodeDeathScreen(new DeathScreen("https://example.org", "{}")),
+                WebviewWire.encodeKeyMenus(new KeyMenuList("[]")),
                 WebviewWire.encodeHello(new Hello(1, "1.8.1")),
                 WebviewWire.encodeAssetManifest(new AssetManifest("rev", "a\tb\t1\n")),
                 WebviewWire.encodeAssetChunk(new AssetChunk("p", 0, 1, bytes(1, 2, 3))),
@@ -417,6 +430,7 @@ class WebviewWireTest {
                 (Function<byte[], Object>) WebviewWire::decodeEntityContext,
                 (Function<byte[], Object>) WebviewWire::decodeTrustedOrigins,
                 (Function<byte[], Object>) WebviewWire::decodeDeathScreen,
+                (Function<byte[], Object>) WebviewWire::decodeKeyMenus,
                 (Function<byte[], Object>) WebviewWire::decodeHello,
                 (Function<byte[], Object>) WebviewWire::decodeAssetManifest,
                 (Function<byte[], Object>) WebviewWire::decodeAssetChunk,

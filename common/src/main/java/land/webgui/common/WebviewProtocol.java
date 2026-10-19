@@ -11,7 +11,11 @@ package land.webgui.common;
 public final class WebviewProtocol {
     private WebviewProtocol() {}
 
-    public static final int PROTOCOL_VERSION = 1;
+    /**
+     * 2 added {@code key_menus}. Clients and servers on different versions drop each
+     * other's pages and say so on join (see the loader-side {@code WebGUIHandshake}).
+     */
+    public static final int PROTOCOL_VERSION = 2;
 
     /** displayMode: open as a screen. */
     public static final int MODE_GUI = 0;
@@ -22,6 +26,11 @@ public final class WebviewProtocol {
     public static final int MAX_EVENT_NAME_LENGTH = 256;
     public static final int MAX_EVENT_DATA_LENGTH = 32_768;
     public static final int MAX_VERSION_LENGTH = 64;
+    /**
+     * The whole {@code keyMenus} list as JSON, sent once per join. Large enough for hundreds of
+     * entries; the sender drops what does not fit rather than failing.
+     */
+    public static final int MAX_KEY_MENUS_LENGTH = 128 * 1024;
     /** One asset path. Longer than any sane bundle nests, short enough to bound the manifest. */
     public static final int MAX_ASSET_PATH_LENGTH = 256;
     /** The whole file list, sent once per join. Half of a custom payload's 1 MiB ceiling. */
@@ -45,6 +54,7 @@ public final class WebviewProtocol {
     public static final String PATH_ENTITY_CONTEXT  = "entity_context";
     public static final String PATH_TRUSTED_ORIGINS = "trusted_origins";
     public static final String PATH_DEATH_SCREEN    = "death_screen";
+    public static final String PATH_KEY_MENUS       = "key_menus";
     public static final String PATH_HELLO           = "hello";
     public static final String PATH_ASSET_MANIFEST  = "asset_manifest";
     public static final String PATH_ASSET_REQUEST   = "asset_request";
@@ -58,6 +68,7 @@ public final class WebviewProtocol {
     public static final String CHANNEL_ENTITY_CONTEXT  = NAMESPACE + ":" + PATH_ENTITY_CONTEXT;
     public static final String CHANNEL_TRUSTED_ORIGINS = NAMESPACE + ":" + PATH_TRUSTED_ORIGINS;
     public static final String CHANNEL_DEATH_SCREEN    = NAMESPACE + ":" + PATH_DEATH_SCREEN;
+    public static final String CHANNEL_KEY_MENUS       = NAMESPACE + ":" + PATH_KEY_MENUS;
     public static final String CHANNEL_HELLO           = NAMESPACE + ":" + PATH_HELLO;
     public static final String CHANNEL_ASSET_MANIFEST  = NAMESPACE + ":" + PATH_ASSET_MANIFEST;
     public static final String CHANNEL_ASSET_REQUEST   = NAMESPACE + ":" + PATH_ASSET_REQUEST;

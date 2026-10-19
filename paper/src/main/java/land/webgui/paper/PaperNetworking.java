@@ -2,6 +2,7 @@ package land.webgui.paper;
 
 import land.webgui.WebGUIVersion;
 import land.webgui.common.ClientKind;
+import land.webgui.common.KeyMenus;
 import land.webgui.common.WebGUILog;
 import land.webgui.common.WebviewProtocol;
 import land.webgui.common.WebviewWire;
@@ -46,6 +47,7 @@ public final class PaperNetworking {
             WebviewProtocol.CHANNEL_ENTITY_CONTEXT,
             WebviewProtocol.CHANNEL_TRUSTED_ORIGINS,
             WebviewProtocol.CHANNEL_DEATH_SCREEN,
+            WebviewProtocol.CHANNEL_KEY_MENUS,
             WebviewProtocol.CHANNEL_HELLO,
             WebviewProtocol.CHANNEL_ASSET_MANIFEST,
             WebviewProtocol.CHANNEL_ASSET_CHUNK);
@@ -152,6 +154,18 @@ public final class PaperNetworking {
     }
 
     /**
+     * Sends the server's key combinations, or an empty list. Skipped for a client that has no
+     * such channel (a WebGUI from before protocol 2), which could not use it.
+     */
+    public static void sendKeyMenus(Player player) {
+        if (!canSend(player, WebviewProtocol.CHANNEL_KEY_MENUS)) {
+            return;
+        }
+        send(player, WebviewProtocol.CHANNEL_KEY_MENUS, WebviewWire.encodeKeyMenus(new WebviewWire.KeyMenuList(
+                KeyMenus.toWire(WebviewServerConfig.keyMenus(), WebviewProtocol.MAX_KEY_MENUS_LENGTH))));
+    }
+
+    /**
      * Tells the client which WebGUI the server runs. Skipped for a client that has no such
      * channel — that case is reported to the player as text instead.
      */
@@ -206,6 +220,8 @@ public final class PaperNetworking {
         sendDeathScreen(player, WebviewServerConfig.deathScreenUrl(), "");
         // Empty included, so clearing mainMenuUrl reaches a player who was given one.
         sendMainMenuUrl(player, WebviewServerConfig.mainMenuUrl());
+        // Likewise an empty list, so removing the last key menu reaches a player who had it.
+        sendKeyMenus(player);
     }
 
     public static void sendTrustedOrigins(Player player, String origins) {

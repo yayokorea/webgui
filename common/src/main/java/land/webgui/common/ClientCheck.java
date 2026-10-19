@@ -17,6 +17,7 @@ public final class ClientCheck {
     public static boolean serverUsesPages() {
         return !WebviewServerConfig.mainMenuUrl().isEmpty()
                 || !WebviewServerConfig.deathScreenUrl().isEmpty()
+                || !WebviewServerConfig.keyMenus().isEmpty()
                 || WebviewServerConfig.autoHudOnJoin();
     }
 

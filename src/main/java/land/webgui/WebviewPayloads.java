@@ -24,6 +24,7 @@ public final class WebviewPayloads {
     public static final int MAX_VERSION_LENGTH = WebviewProtocol.MAX_VERSION_LENGTH;
     public static final int MAX_ASSET_PATH_LENGTH = WebviewProtocol.MAX_ASSET_PATH_LENGTH;
     public static final int MAX_MANIFEST_LENGTH = WebviewProtocol.MAX_MANIFEST_LENGTH;
+    public static final int MAX_KEY_MENUS_LENGTH = WebviewProtocol.MAX_KEY_MENUS_LENGTH;
     public static final int ASSET_CHUNK_BYTES = WebviewProtocol.ASSET_CHUNK_BYTES;
 
     // Channel identifiers — used in both legacy (1.20.1) and modern networking
@@ -35,6 +36,7 @@ public final class WebviewPayloads {
     public static final Identifier ENTITY_CONTEXT_CHANNEL = Identifier.fromNamespaceAndPath(WebviewProtocol.NAMESPACE, WebviewProtocol.PATH_ENTITY_CONTEXT);
     public static final Identifier TRUSTED_ORIGINS_CHANNEL = Identifier.fromNamespaceAndPath(WebviewProtocol.NAMESPACE, WebviewProtocol.PATH_TRUSTED_ORIGINS);
     public static final Identifier DEATH_SCREEN_CHANNEL   = Identifier.fromNamespaceAndPath(WebviewProtocol.NAMESPACE, WebviewProtocol.PATH_DEATH_SCREEN);
+    public static final Identifier KEY_MENUS_CHANNEL       = Identifier.fromNamespaceAndPath(WebviewProtocol.NAMESPACE, WebviewProtocol.PATH_KEY_MENUS);
     public static final Identifier HELLO_CHANNEL          = Identifier.fromNamespaceAndPath(WebviewProtocol.NAMESPACE, WebviewProtocol.PATH_HELLO);
     public static final Identifier ASSET_MANIFEST_CHANNEL = Identifier.fromNamespaceAndPath(WebviewProtocol.NAMESPACE, WebviewProtocol.PATH_ASSET_MANIFEST);
     public static final Identifier ASSET_REQUEST_CHANNEL  = Identifier.fromNamespaceAndPath(WebviewProtocol.NAMESPACE, WebviewProtocol.PATH_ASSET_REQUEST);
@@ -48,6 +50,7 @@ public final class WebviewPayloads {
     public static final ResourceLocation ENTITY_CONTEXT_CHANNEL = ResourceLocation.fromNamespaceAndPath(WebviewProtocol.NAMESPACE, WebviewProtocol.PATH_ENTITY_CONTEXT);
     public static final ResourceLocation TRUSTED_ORIGINS_CHANNEL = ResourceLocation.fromNamespaceAndPath(WebviewProtocol.NAMESPACE, WebviewProtocol.PATH_TRUSTED_ORIGINS);
     public static final ResourceLocation DEATH_SCREEN_CHANNEL   = ResourceLocation.fromNamespaceAndPath(WebviewProtocol.NAMESPACE, WebviewProtocol.PATH_DEATH_SCREEN);
+    public static final ResourceLocation KEY_MENUS_CHANNEL       = ResourceLocation.fromNamespaceAndPath(WebviewProtocol.NAMESPACE, WebviewProtocol.PATH_KEY_MENUS);
     public static final ResourceLocation HELLO_CHANNEL          = ResourceLocation.fromNamespaceAndPath(WebviewProtocol.NAMESPACE, WebviewProtocol.PATH_HELLO);
     public static final ResourceLocation ASSET_MANIFEST_CHANNEL = ResourceLocation.fromNamespaceAndPath(WebviewProtocol.NAMESPACE, WebviewProtocol.PATH_ASSET_MANIFEST);
     public static final ResourceLocation ASSET_REQUEST_CHANNEL  = ResourceLocation.fromNamespaceAndPath(WebviewProtocol.NAMESPACE, WebviewProtocol.PATH_ASSET_REQUEST);
@@ -60,6 +63,7 @@ public final class WebviewPayloads {
     public static final ResourceLocation ENTITY_CONTEXT_CHANNEL = new ResourceLocation(WebviewProtocol.NAMESPACE, WebviewProtocol.PATH_ENTITY_CONTEXT);
     public static final ResourceLocation TRUSTED_ORIGINS_CHANNEL = new ResourceLocation(WebviewProtocol.NAMESPACE, WebviewProtocol.PATH_TRUSTED_ORIGINS);
     public static final ResourceLocation DEATH_SCREEN_CHANNEL   = new ResourceLocation(WebviewProtocol.NAMESPACE, WebviewProtocol.PATH_DEATH_SCREEN);
+    public static final ResourceLocation KEY_MENUS_CHANNEL       = new ResourceLocation(WebviewProtocol.NAMESPACE, WebviewProtocol.PATH_KEY_MENUS);
     public static final ResourceLocation HELLO_CHANNEL          = new ResourceLocation(WebviewProtocol.NAMESPACE, WebviewProtocol.PATH_HELLO);
     public static final ResourceLocation ASSET_MANIFEST_CHANNEL = new ResourceLocation(WebviewProtocol.NAMESPACE, WebviewProtocol.PATH_ASSET_MANIFEST);
     public static final ResourceLocation ASSET_REQUEST_CHANNEL  = new ResourceLocation(WebviewProtocol.NAMESPACE, WebviewProtocol.PATH_ASSET_REQUEST);
@@ -141,6 +145,19 @@ public final class WebviewPayloads {
                         ByteBufCodecs.stringUtf8(MAX_EVENT_DATA_LENGTH),
                         WebviewDeathS2CPayload::infoJson,
                         WebviewDeathS2CPayload::new);
+        @Override
+        public CustomPacketPayload.Type<? extends CustomPacketPayload> type() { return TYPE; }
+    }
+    // S2C: the server's key combinations and the page each opens, as one JSON array
+    // (land.webgui.common.KeyMenus), sent on join and after a reload. The client has no list
+    // of its own: an empty array clears what an earlier one set.
+    public record WebviewKeyMenusS2CPayload(String json) implements CustomPacketPayload {
+        public static final CustomPacketPayload.Type<WebviewKeyMenusS2CPayload> TYPE =
+                new CustomPacketPayload.Type<>(KEY_MENUS_CHANNEL);
+        public static final StreamCodec<RegistryFriendlyByteBuf, WebviewKeyMenusS2CPayload> STREAM_CODEC =
+                StreamCodec.composite(
+                        ByteBufCodecs.stringUtf8(MAX_KEY_MENUS_LENGTH), WebviewKeyMenusS2CPayload::json,
+                        WebviewKeyMenusS2CPayload::new);
         @Override
         public CustomPacketPayload.Type<? extends CustomPacketPayload> type() { return TYPE; }
     }

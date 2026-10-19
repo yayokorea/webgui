@@ -82,6 +82,46 @@ class WebviewServerConfigTest {
     }
 
     @Test
+    void keyMenusAreReadAndCheckedLeniently() throws IOException {
+        assertTrue(WebviewServerConfig.keyMenus().isEmpty(), "none by default");
+
+        Files.writeString(dir.resolve("server.json"), """
+                {"keyMenus": [
+                  {"id": "shop", "keys": ["shift", "F"], "url": "https://x.example/shop"},
+                  {"id": "broken", "keys": ["shift", "nope"], "url": "https://x.example/b"},
+                  {"id": "map", "keys": "alt+1", "url": "https://x.example/map"}]}
+                """, StandardCharsets.UTF_8);
+        WebviewServerConfig.load();
+
+        assertEquals(2, WebviewServerConfig.keyMenus().size());
+        assertEquals(java.util.List.of("shift", "f"), WebviewServerConfig.keyMenus().get(0).keys());
+        assertEquals(java.util.List.of("alt", "1"), WebviewServerConfig.keyMenus().get(1).keys());
+        // The generated secret is written back; the key menus must survive that save.
+        assertTrue(serverJson().contains("\"shop\""));
+    }
+
+    @Test
+    void aMalformedKeyMenusValueDoesNotTakeTheConfigDown() throws IOException {
+        Files.writeString(dir.resolve("server.json"),
+                "{\"deathScreenUrl\": \"http://x.example/d\", \"keyMenus\": \"shift+F\"}", StandardCharsets.UTF_8);
+        WebviewServerConfig.load();
+        assertTrue(WebviewServerConfig.keyMenus().isEmpty());
+        assertEquals("http://x.example/d", WebviewServerConfig.deathScreenUrl());
+    }
+
+    @Test
+    void reloadPicksUpChangedKeyMenus() throws IOException {
+        Files.writeString(dir.resolve("server.json"),
+                "{\"keyMenus\": [{\"id\": \"a\", \"keys\": [\"f7\"], \"url\": \"u\"}]}", StandardCharsets.UTF_8);
+        WebviewServerConfig.load();
+        assertEquals(1, WebviewServerConfig.keyMenus().size());
+
+        Files.writeString(dir.resolve("server.json"), "{\"keyMenus\": []}", StandardCharsets.UTF_8);
+        WebviewServerConfig.reload();
+        assertTrue(WebviewServerConfig.keyMenus().isEmpty());
+    }
+
+    @Test
     void bundledPagesLiveUnderTheConfigDirectory() throws IOException {
         Files.writeString(dir.resolve("server.json"), "{}", StandardCharsets.UTF_8);
         WebviewServerConfig.load();

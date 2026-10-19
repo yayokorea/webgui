@@ -7,6 +7,7 @@ import static land.webgui.common.WebviewProtocol.ASSET_CHUNK_BYTES;
 import static land.webgui.common.WebviewProtocol.MAX_ASSET_PATH_LENGTH;
 import static land.webgui.common.WebviewProtocol.MAX_EVENT_DATA_LENGTH;
 import static land.webgui.common.WebviewProtocol.MAX_EVENT_NAME_LENGTH;
+import static land.webgui.common.WebviewProtocol.MAX_KEY_MENUS_LENGTH;
 import static land.webgui.common.WebviewProtocol.MAX_MANIFEST_LENGTH;
 import static land.webgui.common.WebviewProtocol.MAX_URL_LENGTH;
 import static land.webgui.common.WebviewProtocol.MAX_VERSION_LENGTH;
@@ -50,6 +51,8 @@ public final class WebviewWire {
     public record TrustedOrigins(String origins) {}
 
     public record DeathScreen(String url, String infoJson) {}
+
+    public record KeyMenuList(String json) {}
 
     public record Hello(int protocolVersion, String modVersion) {}
 
@@ -118,6 +121,10 @@ public final class WebviewWire {
                 .writeString(p.url(), MAX_URL_LENGTH)
                 .writeString(p.infoJson(), MAX_EVENT_DATA_LENGTH)
                 .toByteArray();
+    }
+
+    public static byte[] encodeKeyMenus(KeyMenuList p) {
+        return new Writer().writeString(p.json(), MAX_KEY_MENUS_LENGTH).toByteArray();
     }
 
     public static byte[] encodeHello(Hello p) {
@@ -189,6 +196,11 @@ public final class WebviewWire {
         Reader r = new Reader(data);
         DeathScreen p = new DeathScreen(r.readString(MAX_URL_LENGTH), r.readString(MAX_EVENT_DATA_LENGTH));
         return r.finish(p);
+    }
+
+    public static KeyMenuList decodeKeyMenus(byte[] data) {
+        Reader r = new Reader(data);
+        return r.finish(new KeyMenuList(r.readString(MAX_KEY_MENUS_LENGTH)));
     }
 
     public static Hello decodeHello(byte[] data) {
