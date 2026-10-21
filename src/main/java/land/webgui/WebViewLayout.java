@@ -29,10 +29,15 @@ final class WebViewLayout {
         return Math.log(Math.max(1.0, guiScale) / CSS_PIXELS_PER_GUI_UNIT) / Math.log(1.2);
     }
 
+    /** Undo the GUI projection for a quad whose coordinates are framebuffer pixels. */
+    static float pixelToGuiScale(double guiScale) {
+        return (float) (1.0 / Math.max(1.0, guiScale));
+    }
+
     /**
      * Screen mouse coordinates are GUI units; CEF input is in browser view pixels before
-     * page zoom. Use the same full-view mapping as the texture draw, including rounded GUI
-     * dimensions. Chromium itself converts these view coordinates to DOM/CSS coordinates.
+     * page zoom. Undo Minecraft's mouse conversion, which uses rounded GUI dimensions even
+     * though its render projection does not. Chromium converts view pixels to CSS coordinates.
      */
     static int browserCoordinate(double guiCoordinate, int guiExtent, int browserExtent) {
         return (int) Math.round(guiCoordinate * browserExtent / (double) Math.max(1, guiExtent));

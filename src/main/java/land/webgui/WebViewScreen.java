@@ -2,7 +2,6 @@ package land.webgui;
 
 import land.webgui.browser.WebBrowser;
 //? if >=1.21.5 {
-import net.minecraft.client.renderer.RenderPipelines;
 import net.minecraft.client.input.CharacterEvent;
 import net.minecraft.client.input.KeyEvent;
 import net.minecraft.client.input.MouseButtonEvent;
@@ -14,17 +13,15 @@ import net.minecraft.client.gui.GuiGraphics;
 //? }
 import net.minecraft.client.gui.screens.Screen;
 import net.minecraft.network.chat.Component;
-//? if >=1.21.5 {
-import net.minecraft.resources.Identifier;
-//? } else {
-/*import net.minecraft.resources.ResourceLocation;
-*///? }
 
 public class WebViewScreen extends Screen {
 
     private static boolean guiPageReady;
     private final String initialUrl;
     private WebBrowser browser;
+    private int lastPixelW = -1;
+    private int lastPixelH = -1;
+    private double lastGuiScale = -1;
 
     public WebViewScreen(String startUrl) {
         super(Component.translatable("screen.webgui.title"));
@@ -93,8 +90,16 @@ public class WebViewScreen extends Screen {
     private void resizeBrowser() {
         if (browser != null) {
             int[] size = browserViewSize();
-            browser.resize(size[0], size[1]);
-            WebViewLayout.applyZoom(browser);
+            if (size[0] != lastPixelW || size[1] != lastPixelH) {
+                browser.resize(size[0], size[1]);
+                lastPixelW = size[0];
+                lastPixelH = size[1];
+            }
+            double scale = WebViewLayout.guiScale();
+            if (scale != lastGuiScale) {
+                WebViewLayout.applyZoom(browser);
+                lastGuiScale = scale;
+            }
         }
     }
 
@@ -156,21 +161,10 @@ public class WebViewScreen extends Screen {
     *///? } else {
     public void render(GuiGraphics context, int mouseX, int mouseY, float delta) {
     //? }
+        // Also poll here: a physical framebuffer resize need not change rounded GUI size.
+        resizeBrowser();
         if (browser != null && guiPageReady && browser.isTextureReady()) {
-            //? if >=1.21.5 {
-            net.minecraft.resources.Identifier textureLocation = browser.getTextureIdentifier();
-            //? } else {
-            /*net.minecraft.resources.ResourceLocation textureLocation = browser.getTextureIdentifier();
-            *///? }
-            if (textureLocation != null) {
-                int fw = getBrowserWidth();
-                int fh = getBrowserHeight();
-                //? if >=1.21.5 {
-                context.blit(RenderPipelines.GUI_TEXTURED, textureLocation, 0, 0, 0f, 0f, fw, fh, fw, fh);
-                //? } else {
-                /*context.blit(textureLocation, 0, 0, 0f, 0f, fw, fh, fw, fh);
-                *///? }
-            }
+            WebViewRenderer.draw(context, browser);
         }
         // Every frame: the game takes the last request made during one and ignores the rest.
         //? if >26.2 {

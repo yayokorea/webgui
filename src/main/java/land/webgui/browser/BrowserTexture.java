@@ -113,28 +113,22 @@ public final class BrowserTexture extends AbstractTexture {
         if (frame == null || frame.isEmpty()) {
             return null;
         }
-        if (width != frame.width() || height != frame.height()) {
-            resize(frame.width(), frame.height());
-        }
-        long revision = frame.revision();
-        if (revision == uploaded) {
+        if (frame.revision() == uploaded) {
             return id;
         }
-        Damage damage = frame.damageSince(uploaded);
+        Frame.Snapshot snapshot = frame.snapshotSince(uploaded, scratch);
+        if (width != snapshot.width() || height != snapshot.height()) {
+            resize(snapshot.width(), snapshot.height());
+        }
+        scratch = snapshot.pixels();
+        long revision = snapshot.revision();
+        Damage damage = snapshot.damage();
         if (damage.isEmpty()) {
             // Painted, and none of it visible. The revision still moves, so that the next
             // call asks about the right span rather than about this paint again.
             uploaded = revision;
             return id;
         }
-
-        int needed = damage.width() * damage.height() * 4;
-        if (scratch == null || scratch.capacity() < needed) {
-            scratch = ByteBuffer.allocateDirect(needed).order(ByteOrder.nativeOrder());
-        }
-        scratch.clear().limit(needed);
-        frame.copyTo(scratch, damage);
-        scratch.flip();
 
         //? if >=1.21.5 {
         // The command encoder takes RGBA and Chromium paints BGRA, so the exchange is ours.
@@ -170,6 +164,15 @@ public final class BrowserTexture extends AbstractTexture {
         return uploaded >= 0;
     }
 
+    /** Dimensions of the uploaded image, which may lag behind a requested resize. */
+    public int width() {
+        return width;
+    }
+
+    public int height() {
+        return height;
+    }
+
     /** The texture identifier, valid only after a successful {@link #upload}. */
     //? if >=1.21.5 {
     public Identifier id() {
@@ -200,6 +203,14 @@ public final class BrowserTexture extends AbstractTexture {
                 com.mojang.blaze3d.textures.TextureFormat.RGBA8, width, height, 1, 1);
         //? }
         this.textureView = device.createTextureView(this.texture);
+        // A browser supplies final pixels. Never interpolate them or wrap an edge.
+        //? if >26.2 {
+        /*this.sampler = RenderSystem.getSamplerCache().getClampToEdge(
+                com.mojang.renderpearl.api.textures.FilterMode.NEAREST);
+        *///? } else {
+        this.sampler = RenderSystem.getSamplerCache().getClampToEdge(
+                com.mojang.blaze3d.textures.FilterMode.NEAREST);
+        //? }
         Minecraft.getInstance().getTextureManager().register(id, this);
         //? } else {
         /*// Nearest, not linear: a page is text and sharp edges, and a browser that is

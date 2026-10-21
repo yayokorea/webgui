@@ -57,8 +57,8 @@ public class MouseMixin {
         double mx = client.mouseHandler.getScaledXPos(win);
         double my = client.mouseHandler.getScaledYPos(win);
         //? } else {
-        /*double mx = client.mouseHandler.xpos() / win.getGuiScale();
-        double my = client.mouseHandler.ypos() / win.getGuiScale();
+        /*double mx = client.mouseHandler.xpos() * win.getGuiScaledWidth() / win.getScreenWidth();
+        double my = client.mouseHandler.ypos() * win.getGuiScaledHeight() / win.getScreenHeight();
         *///? }
         if (!WebHudOverlay.containsMouse(mx, my, client)) {
             return;
@@ -116,10 +116,11 @@ public class MouseMixin {
         if (browser == null) {
             return;
         }
-        double mx = x / win.getGuiScale();
-        double my = y / win.getGuiScale();
+        double mx = x * win.getGuiScaledWidth() / win.getScreenWidth();
+        double my = y * win.getGuiScaledHeight() / win.getScreenHeight();
         if (WebHudOverlay.containsMouse(mx, my, client)) {
-            browser.sendMouseMove((int) x, (int) y);
+            browser.sendMouseMove(WebHudOverlay.toBrowserLocalX(mx, client),
+                    WebHudOverlay.toBrowserLocalY(my, client));
         }
     }
 
@@ -141,8 +142,8 @@ public class MouseMixin {
         double mx = client.mouseHandler.getScaledXPos(win);
         double my = client.mouseHandler.getScaledYPos(win);
         //? } else {
-        /*double mx = client.mouseHandler.xpos() / win.getGuiScale();
-        double my = client.mouseHandler.ypos() / win.getGuiScale();
+        /*double mx = client.mouseHandler.xpos() * win.getGuiScaledWidth() / win.getScreenWidth();
+        double my = client.mouseHandler.ypos() * win.getGuiScaledHeight() / win.getScreenHeight();
         *///? }
         if (!WebHudOverlay.containsMouse(mx, my, client)) {
             return;

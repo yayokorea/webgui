@@ -257,6 +257,20 @@ public final class WebBrowser {
         return current != null && !closed && !current.isClosed() && !current.frame().isEmpty();
     }
 
+    public int textureWidth() {
+        return texture.width();
+    }
+
+    public int textureHeight() {
+        return texture.height();
+    }
+
+    /** Do not click a new layout while the old size is still being displayed. */
+    private boolean isMouseInputReady() {
+        return texture.isReady()
+                && texture.width() == pendingWidth && texture.height() == pendingHeight;
+    }
+
     // --- what the page is showing --------------------------------------------------------
 
     public synchronized void loadURL(String url) {
@@ -330,14 +344,14 @@ public final class WebBrowser {
 
     public void sendMouseMove(int x, int y) {
         WebView current = view;
-        if (current != null) {
+        if (current != null && isMouseInputReady()) {
             current.input().moveTo(x, y, leftDown);
         }
     }
 
     public void sendMousePress(int x, int y, int button) {
         WebView current = view;
-        if (current == null) {
+        if (current == null || !isMouseInputReady()) {
             return;
         }
         if (button == 0) {
@@ -359,7 +373,7 @@ public final class WebBrowser {
 
     public void sendMouseWheel(int x, int y, double vertical, int horizontal) {
         WebView current = view;
-        if (current != null) {
+        if (current != null && isMouseInputReady()) {
             // How far a notch carries a page is a taste, and tastes differ by mouse: it is a
             // setting rather than a number chosen here.
             int notches = land.webgui.WebGUIClientConfig.scrollNotches();

@@ -9,9 +9,6 @@ import land.webgui.browser.WebBrowser;
 import net.fabricmc.fabric.api.client.rendering.v1.HudRenderCallback;
 //? }
 import net.minecraft.client.Minecraft;
-//? if >=1.21.5 {
-import net.minecraft.client.renderer.RenderPipelines;
-//? }
 //? if >=26 {
 /*// GuiGraphics is gone from the HUD path in 26: the game extracts render state first.
 *///? } else {
@@ -20,19 +17,13 @@ import net.minecraft.client.gui.GuiGraphics;
 //? if >=1.20.5 {
 import net.minecraft.client.DeltaTracker;
 //? }
-//? if >=1.21.5 {
-import net.minecraft.resources.Identifier;
-//? }
 //? if >=26 {
 /*import net.minecraft.client.gui.GuiGraphicsExtractor;
+import net.minecraft.resources.Identifier;
 *///? }
 import net.minecraft.network.chat.Component;
 //? } else {
 /*import net.minecraft.client.Minecraft;
-//? if >=1.21.5 {
-import net.minecraft.client.renderer.RenderPipelines;
-import net.minecraft.resources.Identifier;
-//? }
 //? if >=26 {
 import net.minecraft.client.gui.GuiGraphicsExtractor;
 //? } else {
@@ -318,19 +309,7 @@ public final class WebHudOverlay {
             return;
         }
         if (!browser.isTextureReady()) return;
-        //? if >=1.21.5 {
-        net.minecraft.resources.Identifier tex = browser.getTextureIdentifier();
-        //? } else {
-        /*net.minecraft.resources.ResourceLocation tex = browser.getTextureIdentifier();
-        *///? }
-        if (tex == null) return;
-        int sw = client.getWindow().getGuiScaledWidth();
-        int sh = client.getWindow().getGuiScaledHeight();
-        //? if >=1.21.5 {
-        context.blit(RenderPipelines.GUI_TEXTURED, tex, 0, 0, 0f, 0f, sw, sh, sw, sh);
-        //? } else {
-        /*context.blit(tex, 0, 0, 0f, 0f, sw, sh, sw, sh);
-        *///? }
+        WebViewRenderer.draw(context, browser);
         // Only while the HUD holds the mouse, or a player looking around gets the page's cursor.
         //? if >26.2 {
         /*if (hudInteractive) {

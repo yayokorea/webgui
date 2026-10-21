@@ -1,6 +1,7 @@
 package space.webgui.wmc.api;
 
 import java.nio.ByteBuffer;
+import java.nio.ByteOrder;
 import java.util.OptionalLong;
 
 /**
@@ -45,6 +46,35 @@ public interface Frame {
      */
     default Damage damageSince(long revision) {
         return new Damage(0, 0, width(), height());
+    }
+
+    /**
+     * Metadata and a packed BGRA copy from one paint. The buffer belongs to the reader and
+     * can be reused on its next call; no live Chromium memory escapes here.
+     */
+    record Snapshot(int width, int height, long revision, Damage damage, ByteBuffer pixels) {}
+
+    /**
+     * Reads the changed pixels together with their dimensions and revision. Implementations
+     * that paint concurrently must override this and hold their paint lock around the whole
+     * operation, not just around each getter. GPU uploads happen after this method returns.
+     * The returned buffer is null or unchanged when damage is empty.
+     */
+    default Snapshot snapshotSince(long since, ByteBuffer reusable) {
+        int w = width();
+        int h = height();
+        long at = revision();
+        Damage damage = damageSince(since);
+        if (!damage.isEmpty()) {
+            int needed = damage.width() * damage.height() * 4;
+            if (reusable == null || reusable.capacity() < needed) {
+                reusable = ByteBuffer.allocateDirect(needed).order(ByteOrder.nativeOrder());
+            }
+            reusable.clear().limit(needed);
+            copyTo(reusable, damage);
+            reusable.flip();
+        }
+        return new Snapshot(w, h, at, damage, reusable);
     }
 
     /**

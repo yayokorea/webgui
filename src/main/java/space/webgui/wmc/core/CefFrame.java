@@ -95,6 +95,13 @@ final class CefFrame implements Frame {
     }
 
     @Override
+    public Snapshot snapshotSince(long since, ByteBuffer reusable) {
+        synchronized (lock) {
+            return Frame.super.snapshotSince(since, reusable);
+        }
+    }
+
+    @Override
     public Damage damageSince(long since) {
         synchronized (lock) {
             if (revision == 0) {
@@ -119,7 +126,9 @@ final class CefFrame implements Frame {
                 }
                 union = union == null ? one : cover(union, one);
             }
-            return union == null ? Damage.NONE : union;
+            // A remembered paint may predate a shrink. Its old bounds must not escape
+            // into the new texture's upload rectangle or packed buffer dimensions.
+            return union == null ? Damage.NONE : clip(union);
         }
     }
 
