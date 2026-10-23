@@ -3,6 +3,7 @@
 ## Unreleased
 
 ### Added
+- Added an `.editorconfig` so editors apply the repository's indentation and line endings.
 - **Key combinations that open pages.** `keyMenus` in `server.json` (and the Paper plugin's) is a list of `{id, keys, url}` entries of any length, e.g. `Shift+F` for a shop and `Ctrl+G` for quests. The mod watches the game's key events itself instead of registering key bindings, so a combination can be any keys held together and the list is not fixed at start-up. A combination fires once, when it is completed; it is ignored while chat or another screen is open; the last key pressed is consumed so it does not also act in vanilla. Players can rebind or unbind each entry under Mod settings → Key menus, kept per id in `client.json`. `F6` and `mainMenuUrl` still work. See the README.
   - **The network protocol is now 2.** There is a new `key_menus` payload, sent on join and on reload. Clients and servers on different protocols drop each other's pages and say so in chat; update both together.
 - **A Paper plugin.** `webgui-paper-<version>.jar` lets a Paper (or Purpur) server do what a Fabric or NeoForge server does with the mod, for players on the Fabric client. One jar runs on Paper 1.21.1 through 26.3. This fork distributes it through the GitHub Actions Build workflow artifacts, not releases, Modrinth, or CurseForge.
@@ -16,7 +17,6 @@
 - The code that does not depend on a loader (the wire protocol, the server settings, entity bindings, hosted pages, the update check) moved into a module shared by the mods and the Paper plugin. Behaviour of the mods is unchanged.
 
 ### Fixed
-- Added an `.editorconfig` so editors apply the repository's indentation and line endings.
 - Web pages and HUDs now draw at one framebuffer pixel per browser pixel while retaining Minecraft GUI scaling. Window resizing no longer stretches the previous browser frame, and HUD mouse movement and clicks share the same HiDPI coordinate conversion. Frame uploads read dimensions and pixels atomically, including when a window shrinks between paints.
 - Respawning from a custom death page now restores the existing HUD browser instead of disposing it together with the death page.
 
