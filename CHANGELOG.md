@@ -16,6 +16,7 @@
 - The code that does not depend on a loader (the wire protocol, the server settings, entity bindings, hosted pages, the update check) moved into a module shared by the mods and the Paper plugin. Behaviour of the mods is unchanged.
 
 ### Fixed
+- Added an `.editorconfig` so editors apply the repository's indentation and line endings.
 - Web pages and HUDs now draw at one framebuffer pixel per browser pixel while retaining Minecraft GUI scaling. Window resizing no longer stretches the previous browser frame, and HUD mouse movement and clicks share the same HiDPI coordinate conversion. Frame uploads read dimensions and pixels atomically, including when a window shrinks between paints.
 - Respawning from a custom death page now restores the existing HUD browser instead of disposing it together with the death page.
 
