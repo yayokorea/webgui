@@ -241,7 +241,7 @@ export function PlayerInfo() {
 <a id="building-from-source"></a>
 ## 소스에서 빌드하기
 
-Gradle은 JDK 25로 실행하고, JDK 21과 JDK 25를 모두 사용할 수 있도록 준비하세요([CONTRIBUTING.md](CONTRIBUTING.md) 참고).
+첫 빌드에는 Java 17 이상과 인터넷 연결이 필요합니다. 필요한 JDK는 Gradle이 자동으로 선택하고 내려받습니다([CONTRIBUTING.md](CONTRIBUTING.md) 참고).
 
 ```bash
 git clone https://github.com/yayokorea/webgui-paper.git

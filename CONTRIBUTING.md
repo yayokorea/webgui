@@ -22,20 +22,17 @@ cd webgui-paper
 ./gradlew :1.21.11-fabric:runClient      # launch the Fabric client
 ```
 
-Run Gradle with JDK 25 (`JAVA_HOME` must point to it), and make both JDK 21 and JDK 25 available for compilation. All mod targets in `settings.gradle` build from the same source; their task paths include the loader, such as `:1.21.11-fabric:build` or `:1.21.11-neoforge:build`.
+The first build needs Java 17+ and internet access. Gradle selects Temurin 25 to run the build and automatically downloads missing JDK 21/25 toolchains.
+
+Optional: install and activate [mise](https://mise.jdx.dev/getting-started.html), then run `mise trust` and `mise install` to also select the project's Java in your shell. In an IDE, use the Gradle Wrapper and the project's Daemon JVM criteria.
+
+All mod targets in `settings.gradle` share the same source. To build only Fabric 26.3 and Paper, run `./gradlew :26.3-fabric:build :paper:build`.
 
 ## The Paper plugin
 
 `paper/` is a plain Gradle subproject beside the Stonecutter mod builds. It compiles the loader-independent code in `common/` into one jar, `paper/build/libs/webgui-paper-<mod_version>.jar`, that runs on Paper 1.21.1 through 26.3. It talks to Fabric clients that run the mod, over the `webgui:*` plugin channels.
 
-It is compiled against the 1.21.1 API and, as a check that is never run or shipped, against the 26.3 API (`compilePaper263Java`, part of `check`). Paper 26 needs Java 25, so **building the plugin needs both JDK 21 and JDK 25**. If Gradle does not find them by itself, point it at them:
-
-```bash
-./gradlew :paper:build \
-  -Dorg.gradle.java.installations.paths=/path/to/jdk-21,/path/to/jdk-25
-# CI needs neither: gradle.properties names the variables setup-java exports
-#   (org.gradle.java.installations.fromEnv=JAVA_HOME_21_X64,JAVA_HOME_25_X64)
-```
+It compiles against the 1.21.1 API with JDK 21 and checks compatibility with the 26.3 API using JDK 25 (`compilePaper263Java`, part of `check`). Gradle provisions both JDKs automatically when needed.
 
 Run a server with the plugin (the world and `plugins/` live in `paper/run/<version>/`, which is git-ignored; accept the EULA in `eula.txt` there on the first run):
 
@@ -58,7 +55,7 @@ Two checks run in CI, and both can be run locally:
 .github/scripts/paper-smoke-test.sh 1.21.11 900 --e2e
 ```
 
-`PAPER_PORT` sets the server port (default 25565) and `GRADLE_ARGS` passes extra arguments to Gradle, e.g. the JDK paths above. What the protocol test covers, and how to run it against a server you started yourself, is in [`paper/e2e/README.md`](paper/e2e/README.md).
+`PAPER_PORT` sets the server port (default 25565) and `GRADLE_ARGS` passes extra arguments to Gradle, e.g. `--stacktrace`. What the protocol test covers, and how to run it against a server you started yourself, is in [`paper/e2e/README.md`](paper/e2e/README.md).
 
 ## Adding a new Minecraft version
 

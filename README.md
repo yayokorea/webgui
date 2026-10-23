@@ -221,7 +221,7 @@ export function PlayerInfo() {
 
 ## Building from source
 
-Use JDK 25 to run Gradle and make both JDK 21 and JDK 25 available (see [CONTRIBUTING.md](CONTRIBUTING.md)).
+Requires Java 17+ and internet access on the first build. Gradle automatically selects and downloads the required JDKs (see [CONTRIBUTING.md](CONTRIBUTING.md)).
 
 ```bash
 git clone https://github.com/yayokorea/webgui-paper.git

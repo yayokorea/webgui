@@ -51,6 +51,7 @@ dependencies {
 java {
     toolchain {
         languageVersion = JavaLanguageVersion.of(21)
+        vendor = JvmVendorSpec.ADOPTIUM
     }
 }
 
@@ -68,6 +69,7 @@ tasks.named('compilePaper263Java', JavaCompile) {
     options.release = 25
     javaCompiler = javaToolchains.compilerFor {
         languageVersion = JavaLanguageVersion.of(25)
+        vendor = JvmVendorSpec.ADOPTIUM
     }
 }
 
@@ -121,6 +123,7 @@ tasks.register('runServer263', xyz.jpenilla.runpaper.task.RunServer) {
     pluginJars.from(tasks.named('jar').flatMap { it.archiveFile })
     javaLauncher = javaToolchains.launcherFor {
         languageVersion = JavaLanguageVersion.of(25)
+        vendor = JvmVendorSpec.ADOPTIUM
     }
     if (findProperty('runPaperDebugLog')) {
         jvmArgs("-Dlog4j.configurationFile=${debugLogConfig}")
